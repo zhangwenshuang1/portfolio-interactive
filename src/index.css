@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: 'Poppins', 'Segoe Print', 'Trebuchet MS', 'Microsoft YaHei', sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  color: #1f2937;
+  background: #fffaf3;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at top left, rgba(255, 158, 188, 0.2), transparent 26%),
+    radial-gradient(circle at bottom right, rgba(123, 217, 213, 0.18), transparent 22%),
+    linear-gradient(135deg, #fffaf3 0%, #fff1f5 35%, #effcf7 100%);
+}
+
+button, input, textarea {
+  font: inherit;
+}
+
+#root {
+  min-height: 100vh;
+}
