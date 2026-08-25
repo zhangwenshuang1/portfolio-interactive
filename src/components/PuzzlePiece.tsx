@@ -40,16 +40,6 @@ const getPieceShape = (id: string) => {
   return shapes[id] ?? shapes.photo
 }
 
-// 各块主色（用于接缝处 1px 同色微描边，盖住 clip-path 抗锯齿产生的发丝缝隙）
-const EDGE_COLOR: Record<string, string> = {
-  photo: '#ff4d6d',
-  entertainment: '#8b5cf6',
-  documentary: '#f59e0b',
-  brand: '#2563eb',
-  ai_comic: '#fb923c',
-  sports: '#22c55e',
-}
-
 export default function PuzzlePiece({
   puzzle,
   pointerShift,
@@ -86,9 +76,6 @@ export default function PuzzlePiece({
   const driftX = !puzzle.placed && pointerShift.x ? ((pointerShift.x - 640) / 30) * 0.35 : 0
   const driftY = !puzzle.placed && pointerShift.y ? ((pointerShift.y - 440) / 24) * 0.35 : 0
 
-  const edge = EDGE_COLOR[puzzle.id] ?? '#4b5563'
-  // 四向 1px 同色描边：填平相邻凸/凹弧切点附近的抗锯齿发丝缝，视觉上严丝合缝
-  const edgeStroke = `drop-shadow(1px 0 0 ${edge}) drop-shadow(-1px 0 0 ${edge}) drop-shadow(0 1px 0 ${edge}) drop-shadow(0 -1px 0 ${edge})`
   const idleShadow = 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.08))'
   const hoverShadow = 'drop-shadow(0 20px 30px rgba(255, 111, 180, 0.32))'
 
@@ -106,10 +93,7 @@ export default function PuzzlePiece({
         rotate: isDragging ? 6 : isHovered && !puzzle.placed ? -3 : 0,
         x: isDragging ? 10 : driftX,
         y: isDragging ? 12 : driftY,
-        filter:
-          isHovered && !puzzle.placed
-            ? `${edgeStroke} ${hoverShadow}`
-            : `${edgeStroke} ${idleShadow}`,
+        filter: isHovered && !puzzle.placed ? hoverShadow : idleShadow,
       }}
       transition={{ type: 'spring', stiffness: 250, damping: 22 }}
     >
@@ -118,7 +102,7 @@ export default function PuzzlePiece({
         onMouseDown={onMouseDown}
         className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br ${getColorClass()} p-3 text-white ${puzzle.isRead ? '' : 'opacity-80'}`}
         style={{ clipPath: pieceShape, borderRadius: '0' }}
-        whileHover={{ scale: 1.04 }}
+        whileHover={puzzle.placed ? { scale: 1 } : { scale: 1.04 }}
         whileTap={{ scale: 0.98 }}
       >
         <div className="absolute left-8 top-5 h-7 w-20 -rotate-6 bg-white/35 shadow-sm" />
