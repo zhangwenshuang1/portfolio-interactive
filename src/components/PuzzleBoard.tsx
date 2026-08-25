@@ -81,7 +81,7 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
   return (
     <div
       ref={boardRef}
-      className="relative mx-auto h-[760px] w-full max-w-[1200px] overflow-hidden rounded-[38px] border-[3px] border-white/80 bg-[linear-gradient(135deg,#fffaf1_0%,#fef4f7_30%,#eefcf8_100%)] shadow-[0_28px_90px_rgba(255,117,170,0.22)]"
+      className="relative mx-auto h-[980px] w-full max-w-[1440px] overflow-hidden rounded-[38px] border-[3px] border-white/80 bg-[linear-gradient(135deg,#fffaf1_0%,#fef4f7_30%,#eefcf8_100%)] shadow-[0_28px_90px_rgba(255,117,170,0.22)]"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={() => {

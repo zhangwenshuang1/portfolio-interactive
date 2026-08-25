@@ -12,14 +12,29 @@ interface PuzzlePieceProps {
   isHovered: boolean
 }
 
+// 元素 480×480，主体格在 45..435（390px），四周各留 45px 容纳凸出半圆(r=45)。
+// 半圆圆心落在共享中缝上，凸出/凹进半径相同、方向相反 → 相邻拼图完美咬合。
+// sweep=1 => 凸出(半圆绕到外侧)，sweep=0 => 凹进(半圆绕到内侧)。
 const getPieceShape = (id: string) => {
   const shapes: Record<string, string> = {
-    photo: 'path("M 30 30 H 330 V 120 C 363.14 120 390 146.86 390 180 C 390 213.14 363.14 240 330 240 V 330 H 210 C 210 296.86 183.14 270 150 270 C 116.86 270 90 296.86 90 330 H 30 Z")',
-    entertainment: 'path("M 30 30 H 330 V 120 C 363.14 120 390 146.86 390 180 C 390 213.14 363.14 240 330 240 V 330 H 210 C 210 296.86 183.14 270 150 270 C 116.86 270 90 296.86 90 330 H 30 V 240 C 63.14 240 90 213.14 90 180 C 90 146.86 63.14 120 30 120 Z")',
-    documentary: 'path("M 30 30 H 330 V 330 H 210 C 210 296.86 183.14 270 150 270 C 116.86 270 90 296.86 90 330 H 30 V 240 C 63.14 240 90 213.14 90 180 C 90 146.86 63.14 120 30 120 Z")',
-    brand: 'path("M 30 30 H 150 C 150 -3.14 176.86 -30 210 -30 C 243.14 -30 270 -3.14 270 30 H 330 V 120 C 363.14 120 390 146.86 390 180 C 390 213.14 363.14 240 330 240 V 330 H 30 Z")',
-    ai_comic: 'path("M 30 30 H 150 C 150 -3.14 176.86 -30 210 -30 C 243.14 -30 270 -3.14 270 30 H 330 V 330 H 210 C 210 363.14 183.14 390 150 390 C 116.86 390 90 363.14 90 330 H 30 V 240 C 63.14 240 90 213.14 90 180 C 90 146.86 63.14 120 30 120 Z")',
-    sports: 'path("M 30 30 H 150 C 150 -3.14 176.86 -30 210 -30 C 243.14 -30 270 -3.14 270 30 H 330 V 330 H 90 C 90 296.86 116.86 270 150 270 C 183.14 270 210 296.86 210 330 H 30 V 240 C -3.14 240 -30 213.14 -30 180 C -30 146.86 -3.14 120 30 120 Z")',
+    // 左上：右凸(咬综艺)、底凸(咬品牌)，外边界平直
+    photo:
+      'path("M 45 45 L 435 45 L 435 195 A 45 45 0 0 1 435 285 L 435 435 L 285 435 A 45 45 0 0 1 195 435 L 45 435 Z")',
+    // 中上：左凹(配photo)、右凹(配纪录片)、底凸(咬AI漫剧)
+    entertainment:
+      'path("M 45 45 L 435 45 L 435 195 A 45 45 0 0 0 435 285 L 435 435 L 285 435 A 45 45 0 0 1 195 435 L 45 435 L 45 285 A 45 45 0 0 0 45 195 Z")',
+    // 右上：左凸(咬综艺)、底凸(咬运动)，右外平
+    documentary:
+      'path("M 45 45 L 435 45 L 435 435 L 285 435 A 45 45 0 0 1 195 435 L 45 435 L 45 285 A 45 45 0 0 1 45 195 Z")',
+    // 左下：右凸(咬AI漫剧)、顶凹(配摄影)，左/下外平
+    brand:
+      'path("M 45 45 L 195 45 A 45 45 0 0 0 285 45 L 435 45 L 435 195 A 45 45 0 0 1 435 285 L 435 435 L 45 435 Z")',
+    // 中下：左凹、右凹、顶凹(配综艺)
+    ai_comic:
+      'path("M 45 45 L 195 45 A 45 45 0 0 0 285 45 L 435 45 L 435 195 A 45 45 0 0 0 435 285 L 435 435 L 45 435 L 45 285 A 45 45 0 0 0 45 195 Z")',
+    // 右下：左凸(咬AI漫剧)、顶凹(配纪录片)，右/下外平
+    sports:
+      'path("M 45 45 L 195 45 A 45 45 0 0 0 285 45 L 435 45 L 435 435 L 45 435 L 45 285 A 45 45 0 0 1 45 195 Z")',
   }
 
   return shapes[id] ?? shapes.photo
@@ -58,12 +73,12 @@ export default function PuzzlePiece({
   }
 
   const pieceShape = getPieceShape(puzzle.id)
-  const driftX = !puzzle.placed && pointerShift.x ? ((pointerShift.x - 600) / 30) * 0.35 : 0
-  const driftY = !puzzle.placed && pointerShift.y ? ((pointerShift.y - 380) / 24) * 0.35 : 0
+  const driftX = !puzzle.placed && pointerShift.x ? ((pointerShift.x - 640) / 30) * 0.35 : 0
+  const driftY = !puzzle.placed && pointerShift.y ? ((pointerShift.y - 440) / 24) * 0.35 : 0
 
   return (
     <motion.div
-      className="absolute h-[390px] w-[390px] cursor-grab select-none active:cursor-grabbing"
+      className="absolute h-[480px] w-[480px] cursor-grab select-none active:cursor-grabbing"
       style={{
         left: `${puzzle.position.x}px`,
         top: `${puzzle.position.y}px`,

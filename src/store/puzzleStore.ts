@@ -27,12 +27,12 @@ const PUZZLE_CATEGORIES = [
 ]
 
 const SLOT_POSITIONS = [
-  { x: 105, y: 55 },
-  { x: 405, y: 55 },
-  { x: 705, y: 55 },
-  { x: 105, y: 355 },
-  { x: 405, y: 355 },
-  { x: 705, y: 355 },
+  { x: 80, y: 40 },
+  { x: 470, y: 40 },
+  { x: 860, y: 40 },
+  { x: 80, y: 430 },
+  { x: 470, y: 430 },
+  { x: 860, y: 430 },
 ]
 
 export const usePuzzleStore = create<PuzzleState>((set, get) => ({
