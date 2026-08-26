@@ -41,43 +41,53 @@ export default function LandingPage({ onStart }: LandingPageProps) {
       <div className="pointer-events-none absolute -left-24 -top-16 h-80 w-80 rounded-full bg-[#aee6e0]/25 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-24 -right-16 h-80 w-80 rounded-full bg-[#b9c7ef]/25 blur-3xl" />
 
-      {/* 内容：文字移到上方 & 按钮放下方，避开视频中央的人物 */}
-      <div className="relative z-10 flex h-full flex-col justify-between px-6 sm:px-12">
-        {/* 顶部区域：标题 + 文案（放在偏左/偏右，避免正中央挡人物） */}
-        <motion.div
-          initial={{ y: 24, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.2, duration: 0.7 }}
-          className="pt-[12vh] sm:pt-[16vh]"
-        >
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="mb-5 text-xs font-black uppercase tracking-[0.42em] text-[#2f5d6e] sm:text-sm"
+      {/* 内容：标题文字分左右两边，避开中心人物；按钮放底部居中（人物正下方） */}
+      <div className="relative z-10 mx-auto flex h-full w-full max-w-[1400px] flex-col justify-center px-6 sm:px-12">
+        {/* 左右两栏：左=标题，右=文案（桌面上下左右分布，小屏上下排列） */}
+        <div className="grid w-full items-center gap-10 md:grid-cols-2">
+          {/* 左栏：标签 + 大标题 */}
+          <motion.div
+            initial={{ x: -30, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.7 }}
           >
-            My Portfolio · 2026
-          </motion.p>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="mb-5 text-xs font-black uppercase tracking-[0.42em] text-[#2f5d6e] sm:text-sm"
+            >
+              My Portfolio · 2026
+            </motion.p>
 
-          <h1 className="text-4xl font-black leading-tight text-[#143a4a] sm:text-6xl lg:text-7xl">
-            你好，我是
-            <span className="block bg-gradient-to-r from-[#2f7d8d] via-[#3f6ca8] to-[#5b7ec0] bg-clip-text text-transparent">
-              张文霜
-            </span>
-          </h1>
+            <h1 className="text-4xl font-black leading-tight text-[#143a4a] sm:text-6xl lg:text-7xl">
+              你好，我是
+              <span className="block bg-gradient-to-r from-[#2f7d8d] via-[#3f6ca8] to-[#5b7ec0] bg-clip-text text-transparent">
+                张文霜
+              </span>
+            </h1>
+          </motion.div>
 
-          <p className="mt-6 max-w-md text-base font-medium leading-relaxed text-[#1f4d5e]/90 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)] sm:text-lg">
-            欢迎来到我的作品世界。下面的每一块拼图，都藏着我的一段经历。
-            把它们拼起来，你会认识完整的我。
-          </p>
-        </motion.div>
+          {/* 右栏：文案 */}
+          <motion.div
+            initial={{ x: 30, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            transition={{ delay: 0.35, duration: 0.7 }}
+            className="md:text-right"
+          >
+            <p className="ml-auto max-w-md text-base font-medium leading-relaxed text-[#1f4d5e]/90 drop-shadow-[0_1px_0_rgba(255,255,255,0.6)] sm:text-lg">
+              欢迎来到我的作品世界。下面的每一块拼图，都藏着我的一段经历。
+              把它们拼起来，你会认识完整的我。
+            </p>
+          </motion.div>
+        </div>
 
-        {/* 底部区域：按钮 */}
+        {/* 底部居中：按钮（横向居中对齐 = 人物正下方） */}
         <motion.div
           initial={{ y: 24, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
-          transition={{ delay: 0.3, duration: 0.7 }}
-          className="pb-[9vh] sm:pb-[11vh]"
+          transition={{ delay: 0.45, duration: 0.7 }}
+          className="mt-12 flex justify-center md:mt-16"
         >
           <motion.button
             onClick={onStart}
