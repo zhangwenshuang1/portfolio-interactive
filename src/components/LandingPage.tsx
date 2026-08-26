@@ -21,10 +21,7 @@ export default function LandingPage({ onStart }: LandingPageProps) {
         muted
         playsInline
       >
-        <source
-          src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4"
-          type="video/mp4"
-        />
+        <source src="/videos/动态封面.mp4" type="video/mp4" />
       </video>
 
       {/* 深色半透明遮罩，让文字清晰 */}
