@@ -1,5 +1,5 @@
 import { useLayoutEffect, useRef, useState } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { usePuzzleStore } from '../store/puzzleStore'
 import PuzzlePiece from './PuzzlePiece'
 
@@ -19,6 +19,7 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
     updatePuzzlePosition,
     snapPuzzleToSlot,
     resetPuzzlePosition,
+    resetAllPuzzles,
   } = usePuzzleStore()
 
   const boardRef = useRef<HTMLDivElement>(null)
@@ -32,8 +33,9 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
     const el = boardRef.current
     if (!el) return
     const update = () => {
-      const w = el.getBoundingClientRect().width
-      setScale(Math.min(1, w / DESIGN_W))
+      const rect = el.getBoundingClientRect()
+      // 同时考虑宽和高，保证整块拼图不用滚动即可一屏展示
+      setScale(Math.min(rect.width / DESIGN_W, rect.height / DESIGN_H))
     }
     update()
     const ro = new ResizeObserver(update)
@@ -96,11 +98,13 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
     setDraggedPuzzle(null)
   }
 
+  // 全部六块拼好 → 展示完成画面
+  const allPlaced = puzzles.length > 0 && puzzles.every((p) => p.placed)
+
   return (
     <div
       ref={boardRef}
-      className="relative mx-auto w-full max-w-[1440px] overflow-hidden rounded-[38px] border-[3px] border-white/80 bg-[linear-gradient(135deg,#fffaf1_0%,#fef4f7_30%,#eefcf8_100%)] shadow-[0_28px_90px_rgba(255,117,170,0.22)]"
-      style={{ height: DESIGN_H * scale }}
+      className="relative mx-auto h-full w-full max-w-[1440px] overflow-hidden rounded-[38px] border-[3px] border-white/80 bg-[linear-gradient(135deg,#fffaf1_0%,#fef4f7_30%,#eefcf8_100%)] shadow-[0_28px_90px_rgba(255,117,170,0.22)]"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={() => {
@@ -108,15 +112,26 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
         handleMouseUp()
       }}
     >
+      {/* 定位于中心的逻辑尺寸容器：先按 scale 缩到可视尺寸，再水平垂直居中 */}
       <div
         style={{
-          transform: `scale(${scale})`,
-          transformOrigin: 'top left',
-          width: DESIGN_W,
-          height: DESIGN_H,
-          position: 'relative',
+          position: 'absolute',
+          left: '50%',
+          top: '50%',
+          width: DESIGN_W * scale,
+          height: DESIGN_H * scale,
+          transform: 'translate(-50%, -50%)',
         }}
       >
+        <div
+          style={{
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            width: DESIGN_W,
+            height: DESIGN_H,
+            position: 'relative',
+          }}
+        >
         <motion.div
           className="pointer-events-none absolute inset-0"
           animate={{
@@ -151,6 +166,55 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
           ))}
         </div>
       </div>
+    </div>
+
+      {/* 拼图全部完成后的展示画面 */}
+      <AnimatePresence>
+        {allPlaced && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-md"
+          >
+            {/* 照片卡片（这里就是可以换成你自己照片/画作的地方） */}
+            <motion.div
+              initial={{ scale: 0.86, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              transition={{ type: 'spring', stiffness: 160, damping: 18 }}
+              className="relative w-[min(560px,80%)] rounded-[32px] border-[6px] border-white bg-gradient-to-br from-[#fffaf1] to-[#ffeef5] p-4 shadow-[0_40px_90px_rgba(255,117,170,0.35)]"
+            >
+              <div className="overflow-hidden rounded-[24px]">
+                <img
+                  src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80"
+                  alt="我的照片占位"
+                  className="h-[300px] w-full object-cover sm:h-[360px]"
+                />
+              </div>
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.25 }}
+                className="px-4 pb-4 pt-5 text-center"
+              >
+                <h2 className="text-2xl font-black text-[#1f2937]">
+                  谢谢你，认识了我 💙
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-gray-600">
+                  六块拼图都归位了。就像我们在一起的每一块经历，
+                  都是让我成为今天的我的一块。
+                </p>
+                <button
+                  onClick={resetAllPuzzles}
+                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff7eb6] to-[#ffd54a] px-7 py-3 font-black text-white shadow-lg transition hover:scale-105"
+                >
+                  ↻ 重新拼一次
+                </button>
+              </motion.div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

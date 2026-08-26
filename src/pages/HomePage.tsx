@@ -14,7 +14,7 @@ export default function HomePage({ onSelectPuzzle }: HomePageProps) {
   }, [initializePuzzles])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cream via-pink-light to-yellow-100 p-6 sm:p-8">
+    <div className="flex h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-cream via-pink-light to-yellow-100 p-3 sm:p-5">
       <PuzzleBoard onSelectPuzzle={onSelectPuzzle} />
     </div>
   )

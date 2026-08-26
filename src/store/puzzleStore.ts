@@ -11,6 +11,7 @@ interface PuzzleState {
   updatePuzzlePosition: (id: string, position: { x: number; y: number }) => void
   snapPuzzleToSlot: (id: string) => void
   resetPuzzlePosition: (id: string, fallbackPosition: { x: number; y: number }) => void
+  resetAllPuzzles: () => void
   setHoveredPuzzle: (id: string | null) => void
   isPuzzleRead: (id: string) => boolean
   getReadCount: () => number
@@ -100,6 +101,10 @@ export const usePuzzleStore = create<PuzzleState>((set, get) => ({
         return { ...p, position: fallbackPosition, placed: false }
       }),
     }))
+  },
+
+  resetAllPuzzles: () => {
+    get().initializePuzzles()
   },
 
   setHoveredPuzzle: (id: string | null) => {
