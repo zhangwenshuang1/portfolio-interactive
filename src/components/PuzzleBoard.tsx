@@ -28,6 +28,9 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [startPosition, setStartPosition] = useState({ x: 0, y: 0 })
   const [pointer, setPointer] = useState({ x: 0, y: 0 })
+  // 记录本次交互是否真的发生了拖动(移动超过阈值)，用于在拖拽后抑制 click，
+  // 避免 "拼好一块就弹出详情页" 的误触。
+  const didDragRef = useRef(false)
 
   useLayoutEffect(() => {
     const el = boardRef.current
@@ -58,6 +61,7 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
 
     const p = toLogical(event.clientX, event.clientY)
     setDraggedPuzzle(puzzleId)
+    didDragRef.current = false
     setDragStart({ x: p.x, y: p.y })
     setStartPosition({ x: activePuzzle.position.x, y: activePuzzle.position.y })
   }
@@ -69,6 +73,13 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
     setPointer({ x: raw.x, y: raw.y })
 
     if (!draggedPuzzle) return
+
+    // 指针相对按下点移动超过阈值 → 判定为一次真正的拖动
+    if (!didDragRef.current) {
+      const moved =
+        Math.abs(raw.x - dragStart.x) > 8 || Math.abs(raw.y - dragStart.y) > 8
+      if (moved) didDragRef.current = true
+    }
 
     updatePuzzlePosition(draggedPuzzle, {
       x: raw.x - dragStart.x + startPosition.x,
@@ -158,6 +169,11 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
               onHoverEnd={() => setHoveredPuzzle(null)}
               onClick={() => {
                 setDraggedPuzzle(null)
+                // 刚才是拖动而不是点击 → 不打开详情，避免误触
+                if (didDragRef.current) {
+                  didDragRef.current = false
+                  return
+                }
                 onSelectPuzzle(puzzle.id)
               }}
               isDragging={draggedPuzzle === puzzle.id}
