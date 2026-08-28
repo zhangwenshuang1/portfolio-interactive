@@ -1,17 +1,20 @@
-import { useLayoutEffect, useRef, useState } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePuzzleStore } from '../store/puzzleStore'
 import PuzzlePiece from './PuzzlePiece'
+import PuzzleFinale from './PuzzleFinale'
+import { playSnap } from '../utils/sounds'
 
 interface PuzzleBoardProps {
   onSelectPuzzle: (id: string) => void
+  onReplay?: () => void
 }
 
 // 拼图逻辑设计尺寸（板内坐标基于此），通过 transform:scale 自适应窗口
 const DESIGN_W = 1440
 const DESIGN_H = 980
 
-export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
+export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardProps) {
   const {
     puzzles,
     hoveredPuzzleId,
@@ -31,6 +34,28 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
   // 记录本次交互是否真的发生了拖动(移动超过阈值)，用于在拖拽后抑制 click，
   // 避免 "拼好一块就弹出详情页" 的误触。
   const didDragRef = useRef(false)
+  // 最近一次归位的拼图 id：用来触发轻微物理"吸附"弹跳 + 提示音
+  const [snapPulseId, setSnapPulseId] = useState<string | null>(null)
+
+  // 统计已归位块数，每当新增一块就播放吸附声、并触发该块的弹跳
+  const placedCount = puzzles.filter((p) => p.placed).length
+  const placedCountRef = useRef(placedCount)
+  useEffect(() => {
+    if (placedCount > placedCountRef.current) {
+      const diff = placedCount - placedCountRef.current
+      playSnap(placedCount + diff - 1)
+      const lastPlaced = puzzles
+        .filter((p) => p.placed)
+        .sort((a, b) => (b.placedAt ?? 0) - (a.placedAt ?? 0))[0]
+      const id = lastPlaced ? lastPlaced.id : null
+      setSnapPulseId(id)
+      if (id) {
+        const t = setTimeout(() => setSnapPulseId((cur) => (cur === id ? null : cur)), 350)
+        return () => clearTimeout(t)
+      }
+    }
+    placedCountRef.current = placedCount
+  }, [placedCount, puzzles])
 
   useLayoutEffect(() => {
     const el = boardRef.current
@@ -178,57 +203,26 @@ export default function PuzzleBoard({ onSelectPuzzle }: PuzzleBoardProps) {
               }}
               isDragging={draggedPuzzle === puzzle.id}
               isHovered={hoveredPuzzleId === puzzle.id}
+              snapPulse={snapPulseId === puzzle.id && puzzle.placed}
             />
           ))}
         </div>
       </div>
     </div>
 
-      {/* 拼图全部完成后的展示画面 */}
+      {/* 拼图全部完成后的叙事结尾：碎片汇合成照片 → 缺一块 → 翻转 → 再拼一遍 */}
       <AnimatePresence>
         {allPlaced && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="absolute inset-0 z-20 flex items-center justify-center bg-white/60 backdrop-blur-md"
-          >
-            {/* 照片卡片（这里就是可以换成你自己照片/画作的地方） */}
-            <motion.div
-              initial={{ scale: 0.86, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              transition={{ type: 'spring', stiffness: 160, damping: 18 }}
-              className="relative w-[min(560px,80%)] rounded-[32px] border-[6px] border-white bg-gradient-to-br from-[#fffaf1] to-[#ffeef5] p-4 shadow-[0_40px_90px_rgba(255,117,170,0.35)]"
-            >
-              <div className="overflow-hidden rounded-[24px]">
-                <img
-                  src="https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=80"
-                  alt="我的照片占位"
-                  className="h-[300px] w-full object-cover sm:h-[360px]"
-                />
-              </div>
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25 }}
-                className="px-4 pb-4 pt-5 text-center"
-              >
-                <h2 className="text-2xl font-black text-[#1f2937]">
-                  谢谢你，认识了我 💙
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-gray-600">
-                  六块拼图都归位了。就像我们在一起的每一块经历，
-                  都是让我成为今天的我的一块。
-                </p>
-                <button
-                  onClick={resetAllPuzzles}
-                  className="mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff7eb6] to-[#ffd54a] px-7 py-3 font-black text-white shadow-lg transition hover:scale-105"
-                >
-                  ↻ 重新拼一次
-                </button>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+          <PuzzleFinale
+            key="finale"
+            onReveal={() => {
+              // 背面文字出现时，做什么（如需）可在这里接入
+            }}
+            onReplay={() => {
+              resetAllPuzzles()
+              onReplay?.()
+            }}
+          />
         )}
       </AnimatePresence>
     </div>

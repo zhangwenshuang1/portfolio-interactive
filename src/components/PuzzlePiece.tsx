@@ -10,6 +10,7 @@ interface PuzzlePieceProps {
   onClick: () => void
   isDragging: boolean
   isHovered: boolean
+  snapPulse?: boolean
 }
 
 // 元素 440×440，主体格在 40..400（360px），四周各留 40px 容纳凸出半圆(r=40)。
@@ -49,6 +50,7 @@ export default function PuzzlePiece({
   onClick,
   isDragging,
   isHovered,
+  snapPulse = false,
 }: PuzzlePieceProps) {
   const getColorClass = () => {
     if (puzzle.isRead) {
@@ -89,7 +91,7 @@ export default function PuzzlePiece({
       onHoverStart={onHover}
       onHoverEnd={onHoverEnd}
       animate={{
-        scale: isHovered && !puzzle.placed ? 1.08 : 1,
+        scale: snapPulse ? [1, 1.07, 0.99, 1] : isHovered && !puzzle.placed ? 1.08 : 1,
         rotate: isDragging ? 6 : isHovered && !puzzle.placed ? -3 : 0,
         x: isDragging ? 10 : driftX,
         y: isDragging ? 12 : driftY,

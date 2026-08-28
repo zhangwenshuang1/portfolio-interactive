@@ -11,6 +11,7 @@ export interface Puzzle {
   videoUrl: string
   isRead: boolean
   placed: boolean
+  placedAt?: number
   position: { x: number; y: number }
   slot: { x: number; y: number }
 }

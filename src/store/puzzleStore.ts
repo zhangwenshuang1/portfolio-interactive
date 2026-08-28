@@ -143,7 +143,7 @@ export const usePuzzleStore = create<PuzzleState>((set, get) => ({
     set((state) => ({
       puzzles: state.puzzles.map((p) => {
         if (p.id !== id) return p
-        return { ...p, position: p.slot, placed: true }
+        return { ...p, position: p.slot, placed: true, placedAt: Date.now() }
       }),
     }))
   },
@@ -152,7 +152,12 @@ export const usePuzzleStore = create<PuzzleState>((set, get) => ({
     set((state) => ({
       puzzles: state.puzzles.map((p) => {
         if (p.id !== id) return p
-        return { ...p, position: fallbackPosition, placed: false }
+        return {
+          ...p,
+          position: fallbackPosition,
+          placed: false,
+          placedAt: undefined,
+        }
       }),
     }))
   },

@@ -32,7 +32,7 @@ function App() {
             exit={{ opacity: 0, scale: 1.02 }}
             transition={{ duration: 0.5 }}
           >
-            <HomePage onSelectPuzzle={setCurrentPuzzleId} />
+            <HomePage onSelectPuzzle={setCurrentPuzzleId} onReplay={() => setView('landing')} />
           </motion.div>
         )}
       </AnimatePresence>
