@@ -2,9 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { playMergeChime } from '../utils/sounds'
 
+// 六块拼图聚拢成的完整方形区块（在 1440×980 逻辑坐标下）：
+// 3×2，每块 440，左上角在 (60,50)，整体 1320×880 —— 正好覆盖 ASSEMBLY_POSITIONS
+interface PhotoBounds {
+  left: number
+  top: number
+  width: number
+  height: number
+}
+
 interface PuzzleFinaleProps {
   onReplay: () => void
   onReveal: () => void // 翻转背面展示时告知上层（可选）
+  photoBounds?: PhotoBounds
 }
 
 // ★ 个人照片：把这里换成你自己的照片地址即可。
@@ -45,9 +55,19 @@ function Mosaic() {
 }
 
 // 拼接完成后：整张清晰照片浮现（马赛克块淡出 → 清晰照淡入）
-function RevealPhoto() {
+// 照片被固定在"六块拼图拼成的方形区块"上，视觉上就是六块拼图合体成一张照片
+function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
   return (
-    <div className="relative h-full w-full">
+    <div
+      className="relative overflow-hidden"
+      style={{
+        position: 'absolute',
+        left: bounds.left,
+        top: bounds.top,
+        width: bounds.width,
+        height: bounds.height,
+      }}
+    >
       {/* 马赛克碎片层：淡出 */}
       <motion.div
         className="absolute inset-0"
@@ -82,7 +102,11 @@ function RevealPhoto() {
   )
 }
 
-function PuzzleFinale({ onReplay, onReveal }: PuzzleFinaleProps) {
+function PuzzleFinale({
+  onReplay,
+  onReveal,
+  photoBounds = { left: 60, top: 50, width: 1320, height: 880 },
+}: PuzzleFinaleProps) {
   const [stage, setStage] = useState<'photo' | 'missing' | 'replay'>('photo')
   const revealed = useRef(false)
 
@@ -121,10 +145,10 @@ function PuzzleFinale({ onReplay, onReveal }: PuzzleFinaleProps) {
         {stage === 'photo' && (
           <motion.div
             key="photo"
-            className="absolute inset-0"
+            className="absolute inset-0 z-10"
             exit={{ opacity: 0 }}
           >
-            <RevealPhoto />
+            <RevealPhoto bounds={photoBounds} />
           </motion.div>
         )}
 

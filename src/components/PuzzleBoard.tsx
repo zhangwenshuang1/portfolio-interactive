@@ -15,6 +15,10 @@ interface PuzzleBoardProps {
 const DESIGN_W = 1440
 const DESIGN_H = 980
 
+// 六块拼图聚拢后组成的 3×2 完整方形（与 ASSEMBLY_POSITIONS 对应）：
+// 每块 440×440，左上角 (60,50)，整体 1320×880。照片会精确出现在这个方块上。
+const PHOTO_BOUNDS = { left: 60, top: 50, width: 1320, height: 880 }
+
 export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardProps) {
   const {
     puzzles,
@@ -226,6 +230,24 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
             />
           ))}
         </div>
+
+        {/* 拼图全部完成（看完所有 story 并归位）后的叙事结尾：
+            六块拼图聚拢成方形 → 方块上浮现照片 → 缺一块 → 翻转 → 重新认识我 */}
+        <AnimatePresence>
+          {allRead && allPlaced && (
+            <PuzzleFinale
+              key="finale"
+              photoBounds={PHOTO_BOUNDS}
+              onReveal={() => {
+                // 背面文字出现时，做什么（如需）可在这里接入
+              }}
+              onReplay={() => {
+                resetAllPuzzles()
+                onReplay?.()
+              }}
+            />
+          )}
+        </AnimatePresence>
       </div>
     </div>
 
@@ -243,23 +265,6 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
               还差 {unreadCount} 块故事没看，全部看完拼图会自动合上 ✨
             </span>
           </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* 拼图全部完成（看完所有 story 并归位）后的叙事结尾：
-          碎片汇合成照片 → 缺一块 → 翻转 → 再拼一遍 */}
-      <AnimatePresence>
-        {allRead && allPlaced && (
-          <PuzzleFinale
-            key="finale"
-            onReveal={() => {
-              // 背面文字出现时，做什么（如需）可在这里接入
-            }}
-            onReplay={() => {
-              resetAllPuzzles()
-              onReplay?.()
-            }}
-          />
         )}
       </AnimatePresence>
     </div>
