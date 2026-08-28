@@ -134,8 +134,26 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
     setDraggedPuzzle(null)
   }
 
-  // 全部六块拼好 → 展示完成画面
+  // 全部六块拼好 → 展示完成画面（需读完全部 story 才播放）
   const allPlaced = puzzles.length > 0 && puzzles.every((p) => p.placed)
+  const allRead = puzzles.length > 0 && puzzles.every((p) => p.isRead)
+  // 读完最后一个 story 后，尚未归位的拼图逐块自动吸附到位
+  const autoSnapStartedRef = useRef(false)
+  useEffect(() => {
+    if (!allRead) {
+      autoSnapStartedRef.current = false
+      return
+    }
+    if (autoSnapStartedRef.current) return
+    const unPlaced = puzzles.filter((p) => !p.placed).map((p) => p.id)
+    if (unPlaced.length === 0) return
+    autoSnapStartedRef.current = true
+    unPlaced.forEach((id, i) => {
+      setTimeout(() => snapPuzzleToSlot(id), 200 + i * 280)
+    })
+  }, [allRead, puzzles, snapPuzzleToSlot])
+
+  const unreadCount = puzzles.filter((p) => !p.isRead).length
 
   return (
     <div
@@ -210,9 +228,27 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
       </div>
     </div>
 
-      {/* 拼图全部完成后的叙事结尾：碎片汇合成照片 → 缺一块 → 翻转 → 再拼一遍 */}
+      {/* 拼图已归位但仍有故事未读：温柔提醒去补齐/或等自动归位 */}
       <AnimatePresence>
-        {allPlaced && (
+        {allPlaced && !allRead && (
+          <motion.div
+            key="read-hint"
+            initial={{ opacity: 0, y: -12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="pointer-events-none absolute left-1/2 top-5 z-20 -translate-x-1/2 rounded-full bg-white/85 px-6 py-3 text-center shadow-lg backdrop-blur-sm"
+          >
+            <span className="text-base font-bold text-[#7a4a63]">
+              还差 {unreadCount} 块故事没看，全部看完拼图会自动合上 ✨
+            </span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* 拼图全部完成（看完所有 story 并归位）后的叙事结尾：
+          碎片汇合成照片 → 缺一块 → 翻转 → 再拼一遍 */}
+      <AnimatePresence>
+        {allRead && allPlaced && (
           <PuzzleFinale
             key="finale"
             onReveal={() => {
