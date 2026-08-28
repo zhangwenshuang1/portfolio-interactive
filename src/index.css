@@ -37,6 +37,16 @@ button, input, textarea {
   font: inherit;
 }
 
+/* 卡通活泼手绘风格字体
+   - .font-cartoon-latin: 英文/数字（圆润卡通 Fredoka）
+   - .font-cartoon-cn:    中文（站酷快乐体，卡通手绘）；无中文覆盖时回退 Fredoka */
+.font-cartoon-latin {
+  font-family: 'Fredoka', 'Poppins', 'Segoe Print', sans-serif;
+}
+.font-cartoon-cn {
+  font-family: 'ZCOOL KuaiLe', 'Fredoka', 'Poppins', 'Microsoft YaHei', sans-serif;
+}
+
 #root {
   min-height: 100vh;
 }

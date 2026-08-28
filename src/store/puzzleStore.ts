@@ -25,7 +25,7 @@ const PUZZLE_CATEGORIES = [
     emoji: '📷',
     englishTitle: 'SEE',
     tagline: 'Finding beauty in between.',
-    keywords: ['摄影', '人物', '风景', '摄影工作'],
+    keywords: ['摄影', '人像', '风光', '运动'],
     category: 'photography' as const,
   },
   {
@@ -34,7 +34,7 @@ const PUZZLE_CATEGORIES = [
     emoji: '🎬',
     englishTitle: 'DO',
     tagline: 'Make it happen.',
-    keywords: ['综艺现场', '题库', '嘉宾', '幕后工作'],
+    keywords: ['综艺现场', '嘉宾对接', '幕后工作'],
     category: 'entertainment' as const,
   },
   {
@@ -43,7 +43,7 @@ const PUZZLE_CATEGORIES = [
     emoji: '🎞️',
     englishTitle: 'LEAD',
     tagline: 'From idea to story.',
-    keywords: ['纪录片', '项目统筹', '采访', '拍摄'],
+    keywords: ['纪录片', '项目统筹', '采访拍摄'],
     category: 'documentary' as const,
   },
   {
@@ -52,7 +52,7 @@ const PUZZLE_CATEGORIES = [
     emoji: '🤖',
     englishTitle: 'CREATE',
     tagline: 'Make ideas visible.',
-    keywords: ['AIGC', '视频', 'AI创作', '工作现场'],
+    keywords: ['品牌策划', '视频剪辑', 'AI创作'],
     category: 'brand' as const,
   },
   {
@@ -61,7 +61,7 @@ const PUZZLE_CATEGORIES = [
     emoji: '🏀',
     englishTitle: 'MOVE',
     tagline: 'Go. Try. Keep going.',
-    keywords: ['篮球', '健身', '攀岩', '身体与行动'],
+    keywords: ['篮球', '健身', '攀岩'],
     category: 'sports' as const,
   },
   {
@@ -70,18 +70,20 @@ const PUZZLE_CATEGORIES = [
     emoji: '🌱',
     englishTitle: 'CONNECT',
     tagline: 'Be part of something.',
-    keywords: ['支教', '社团', '志愿活动', '人与人的连接'],
+    keywords: ['支教', '社团', '志愿活动'],
     category: 'ai_comic' as const,
   },
 ]
 
+// 6 块拼图槽位：3×2，块元素 440，列距 480、行距 420。
+// 间距均大于拼图主体(360)，初始摆放六块彼此分离、呼吸感强、互不堆叠。
 const SLOT_POSITIONS = [
-  { x: 80, y: 40 },
-  { x: 470, y: 40 },
-  { x: 860, y: 40 },
-  { x: 80, y: 430 },
-  { x: 470, y: 430 },
-  { x: 860, y: 430 },
+  { x: 40, y: 50 },
+  { x: 520, y: 50 },
+  { x: 1000, y: 50 },
+  { x: 40, y: 470 },
+  { x: 520, y: 470 },
+  { x: 1000, y: 470 },
 ]
 
 export const usePuzzleStore = create<PuzzleState>((set, get) => ({
@@ -104,8 +106,8 @@ export const usePuzzleStore = create<PuzzleState>((set, get) => ({
       isRead: false,
       placed: false,
       position: {
-        x: SLOT_POSITIONS[index].x + (Math.random() * 180 - 90),
-        y: SLOT_POSITIONS[index].y + (Math.random() * 160 - 80),
+        x: SLOT_POSITIONS[index].x + (Math.random() * 60 - 30),
+        y: SLOT_POSITIONS[index].y + (Math.random() * 40 - 20),
       },
       slot: SLOT_POSITIONS[index],
     }))

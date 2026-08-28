@@ -12,29 +12,29 @@ interface PuzzlePieceProps {
   isHovered: boolean
 }
 
-// 元素 480×480，主体格在 45..435（390px），四周各留 45px 容纳凸出半圆(r=45)。
+// 元素 440×440，主体格在 40..400（360px），四周各留 40px 容纳凸出半圆(r=40)。
 // 半圆圆心落在共享中缝上，凸出/凹进半径相同、方向相反 → 相邻拼图完美咬合。
 // sweep=1 => 凸出(半圆绕到外侧)，sweep=0 => 凹进(半圆绕到内侧)。
 const getPieceShape = (id: string) => {
   const shapes: Record<string, string> = {
     // 左上：右凸(咬综艺)、底凸(咬品牌)，外边界平直
     photo:
-      'path("M 45 45 L 435 45 L 435 195 A 45 45 0 0 1 435 285 L 435 435 L 285 435 A 45 45 0 0 1 195 435 L 45 435 Z")',
+      'path("M 40 40 L 400 40 L 400 180 A 40 40 0 0 1 400 260 L 400 400 L 260 400 A 40 40 0 0 1 180 400 L 40 400 Z")',
     // 中上：左凹(配photo)、右凹(配纪录片)、底凸(咬AI漫剧)
     entertainment:
-      'path("M 45 45 L 435 45 L 435 195 A 45 45 0 0 0 435 285 L 435 435 L 285 435 A 45 45 0 0 1 195 435 L 45 435 L 45 285 A 45 45 0 0 0 45 195 Z")',
+      'path("M 40 40 L 400 40 L 400 180 A 40 40 0 0 0 400 260 L 400 400 L 260 400 A 40 40 0 0 1 180 400 L 40 400 L 40 260 A 40 40 0 0 0 40 180 Z")',
     // 右上：左凸(咬综艺)、底凸(咬运动)，右外平
     documentary:
-      'path("M 45 45 L 435 45 L 435 435 L 285 435 A 45 45 0 0 1 195 435 L 45 435 L 45 285 A 45 45 0 0 1 45 195 Z")',
+      'path("M 40 40 L 400 40 L 400 400 L 260 400 A 40 40 0 0 1 180 400 L 40 400 L 40 260 A 40 40 0 0 1 40 180 Z")',
     // 左下：右凸(咬AI漫剧)、顶凹(配摄影)，左/下外平
     brand:
-      'path("M 45 45 L 195 45 A 45 45 0 0 0 285 45 L 435 45 L 435 195 A 45 45 0 0 1 435 285 L 435 435 L 45 435 Z")',
+      'path("M 40 40 L 180 40 A 40 40 0 0 0 260 40 L 400 40 L 400 180 A 40 40 0 0 1 400 260 L 400 400 L 40 400 Z")',
     // 中下：左凹、右凹、顶凹(配综艺)
     ai_comic:
-      'path("M 45 45 L 195 45 A 45 45 0 0 0 285 45 L 435 45 L 435 195 A 45 45 0 0 0 435 285 L 435 435 L 45 435 L 45 285 A 45 45 0 0 0 45 195 Z")',
+      'path("M 40 40 L 180 40 A 40 40 0 0 0 260 40 L 400 40 L 400 180 A 40 40 0 0 0 400 260 L 400 400 L 40 400 L 40 260 A 40 40 0 0 0 40 180 Z")',
     // 右下：左凸(咬AI漫剧)、顶凹(配纪录片)，右/下外平
     sports:
-      'path("M 45 45 L 195 45 A 45 45 0 0 0 285 45 L 435 45 L 435 435 L 45 435 L 45 285 A 45 45 0 0 1 45 195 Z")',
+      'path("M 40 40 L 180 40 A 40 40 0 0 0 260 40 L 400 40 L 400 400 L 40 400 L 40 260 A 40 40 0 0 1 40 180 Z")',
   }
 
   return shapes[id] ?? shapes.photo
@@ -81,7 +81,7 @@ export default function PuzzlePiece({
 
   return (
     <motion.div
-      className="absolute h-[480px] w-[480px] cursor-grab select-none active:cursor-grabbing"
+      className="absolute h-[440px] w-[440px] cursor-grab select-none active:cursor-grabbing"
       style={{
         left: `${puzzle.position.x}px`,
         top: `${puzzle.position.y}px`,
@@ -111,28 +111,28 @@ export default function PuzzlePiece({
 
         <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-4 text-center">
           {/* 图标 */}
-          <div className="mb-3 text-6xl leading-none drop-shadow-md">{puzzle.emoji}</div>
+          <div className="mb-3 text-5xl leading-none drop-shadow-md">{puzzle.emoji}</div>
 
-          {/* 英文大标题 */}
-          <div className="text-5xl font-black tracking-[0.08em] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+          {/* 英文大标题（卡通字体，去加粗，显细） */}
+          <div className="font-cartoon-latin text-4xl font-medium tracking-[0.08em] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.28)]">
             {puzzle.englishTitle}
           </div>
 
           {/* 一行小字副标题 */}
-          <div className="mt-2 text-sm italic tracking-wide text-white/90 sm:text-base">
+          <div className="font-cartoon-latin mt-1.5 text-base italic tracking-wide text-white/95">
             {puzzle.tagline}
           </div>
 
-          {/* 关键词：已读后永久显示；未读时只在 hover 时浮现 */}
+          {/* 关键词：已读后永久显示；未读时只在 hover 时浮现（中文卡通字体） */}
           <div
-            className={`mt-5 flex max-w-[360px] flex-wrap items-center justify-center gap-2 ${
+            className={`mt-4 flex max-w-[300px] flex-wrap items-center justify-center gap-2 ${
               isHovered || puzzle.isRead ? '' : 'hidden'
             }`}
           >
             {puzzle.keywords.map((kw) => (
               <span
                 key={kw}
-                className="rounded-full bg-white/30 px-3 py-1 text-sm font-bold text-white shadow-sm backdrop-blur-sm"
+                className="font-cartoon-cn rounded-full bg-white/30 px-3 py-1 text-base font-normal text-white shadow-sm backdrop-blur-sm"
               >
                 {kw}
               </span>
