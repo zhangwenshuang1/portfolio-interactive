@@ -21,41 +21,9 @@ interface PuzzleFinaleProps {
 // 建议放到 public/ 下，例如 '/my-photo.jpg'。
 const FINALE_PHOTO = '/full-photo.png'
 
-// 拼接 3×2 马赛克分块（用同一张图的不同裁切模拟"碎片逐渐汇合成照片"）
-function Mosaic() {
-  const tiles = [
-    '0% 0% / 50% 50%',
-    '100% 0% / 50% 50%',
-    '200% 0% / 50% 50%',
-    '0% 100% / 50% 50%',
-    '100% 100% / 50% 50%',
-    '200% 100% / 50% 50%',
-  ]
-  return (
-    <div className="grid h-full w-full grid-cols-3 grid-rows-2 overflow-hidden">
-      {tiles.map((pos, i) => (
-        <motion.div
-          key={i}
-          className="h-full w-full overflow-hidden"
-          initial={{ opacity: 0, scale: 1.8, y: 1.8 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          transition={{ duration: 0.7, delay: i * 0.12, ease: [0.2, 0.8, 0.3, 1] }}
-        >
-          <img
-            src={FINALE_PHOTO}
-            alt=""
-            style={{ backgroundPosition: pos, backgroundSize: '300% 200%' }}
-            className="block h-[calc(100%*3)] w-[calc(100%*2)] object-cover"
-            draggable={false}
-          />
-        </motion.div>
-      ))}
-    </div>
-  )
-}
-
-// 拼接完成后：整张拼好的长方形像卡片一样 3D 翻转，背面揭露出完整照片。
-// 正面是"六块碎块拼合的马赛克面"，翻转 180° 后背面就是那张清晰照片。
+// 拼接完成后：整块拼好的长方形像卡片一样 3D 翻转。
+// 照片本身就是由六块拼图拼成的那一大块——翻转时正面就是那六块真实拼图（卡片正面透明、透出下方拼图），
+// 翻到底后面露出的是完整照片。绝不额外切成"新的六块碎片"。
 function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
   return (
     <div
@@ -66,26 +34,24 @@ function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
         top: bounds.top,
         width: bounds.width,
         height: bounds.height,
-        perspective: 1600,
+        perspective: 1800,
       }}
     >
-      {/* 翻转卡片：正面马赛克拼图 → 翻转露出背面照片 */}
+      {/* 翻转卡片：正面透出下方真实六块拼图 → 翻转露出背面完整照片 */}
       <motion.div
         className="absolute inset-0"
         style={{ transformStyle: 'preserve-3d' }}
         initial={{ rotateY: 0 }}
         animate={{ rotateY: 180 }}
-        transition={{ duration: 1.5, ease: [0.4, 0.05, 0.1, 0.9], delay: 1.8 }}
+        transition={{ duration: 1.5, ease: [0.4, 0.05, 0.1, 0.9], delay: 1.6 }}
       >
-        {/* 正面：六块拼图碎片拼成的马赛克面 */}
-        <motion.div
+        {/* 正面：全透明 → 露出下方真实的六块拼图（不额外渲染碎片层） */}
+        <div
           className="absolute inset-0"
-          style={{ backfaceVisibility: 'hidden' }}
-        >
-          <Mosaic />
-        </motion.div>
+          style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
+        />
 
-        {/* 背面：完整照片（翻转后才可见） */}
+        {/* 背面：完整照片（只这一面有内容，翻转后才转向用户） */}
         <motion.div
           className="absolute inset-0 overflow-hidden bg-black"
           style={{ backfaceVisibility: 'hidden', rotateY: 180 }}
@@ -101,7 +67,7 @@ function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
             className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
             initial={{ x: '-110%' }}
             animate={{ x: '110%' }}
-            transition={{ duration: 1, delay: 2.2 }}
+            transition={{ duration: 1, delay: 2.0 }}
           />
         </motion.div>
       </motion.div>
@@ -112,7 +78,7 @@ function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
 function PuzzleFinale({
   onReplay,
   onReveal,
-  photoBounds = { left: 180, top: 120, width: 1320, height: 880 },
+  photoBounds = { left: 60, top: 50, width: 1320, height: 880 },
 }: PuzzleFinaleProps) {
   const [stage, setStage] = useState<'photo' | 'missing' | 'replay'>('photo')
   const revealed = useRef(false)

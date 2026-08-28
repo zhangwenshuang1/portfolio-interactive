@@ -75,9 +75,8 @@ export default function PuzzlePiece({
   }
 
   const pieceShape = getPieceShape(puzzle.id)
-  // 以新板(1680×1120)中心(840,560)为基准做轻微视差漂移
-  const driftX = !puzzle.placed && pointerShift.x ? ((pointerShift.x - 840) / 30) * 0.35 : 0
-  const driftY = !puzzle.placed && pointerShift.y ? ((pointerShift.y - 560) / 24) * 0.35 : 0
+  const driftX = !puzzle.placed && pointerShift.x ? ((pointerShift.x - 640) / 30) * 0.35 : 0
+  const driftY = !puzzle.placed && pointerShift.y ? ((pointerShift.y - 440) / 24) * 0.35 : 0
 
   const idleShadow = 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.08))'
   const hoverShadow = 'drop-shadow(0 20px 30px rgba(255, 111, 180, 0.32))'

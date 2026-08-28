@@ -11,14 +11,13 @@ interface PuzzleBoardProps {
   onReplay?: () => void
 }
 
-// 拼图逻辑设计尺寸（板内坐标基于此），通过 transform:scale 自适应窗口。
-// 放大到 1680×1120：六块初始可散布在四外圈，聚拢动作更明显。
-const DESIGN_W = 1680
-const DESIGN_H = 1120
+// 拼图逻辑设计尺寸（板内坐标基于此），通过 transform:scale 自适应窗口
+const DESIGN_W = 1440
+const DESIGN_H = 980
 
 // 六块拼图聚拢后组成的 3×2 完整方形（与 ASSEMBLY_POSITIONS 对应）：
-// 每块 440×440，左上角 (180,120)，整体 1320×880，居中于板面。照片精确出现在这个方块上。
-const PHOTO_BOUNDS = { left: 180, top: 120, width: 1320, height: 880 }
+// 每块 440×440，左上角 (60,50)，整体 1320×880，居中于板面。照片精确出现在这个方块上。
+const PHOTO_BOUNDS = { left: 60, top: 50, width: 1320, height: 880 }
 
 export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardProps) {
   const {
@@ -164,7 +163,7 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
   return (
     <div
       ref={boardRef}
-      className="relative mx-auto h-full w-full max-w-[1680px] overflow-hidden rounded-[38px] border-[3px] border-white/80 bg-[linear-gradient(135deg,#fffaf1_0%,#fef4f7_30%,#eefcf8_100%)] shadow-[0_28px_90px_rgba(255,117,170,0.22)]"
+      className="relative mx-auto h-full w-full max-w-[1440px] overflow-hidden rounded-[38px] border-[3px] border-white/80 bg-[linear-gradient(135deg,#fffaf1_0%,#fef4f7_30%,#eefcf8_100%)] shadow-[0_28px_90px_rgba(255,117,170,0.22)]"
       onMouseMove={handleMouseMove}
       onMouseUp={handleMouseUp}
       onMouseLeave={() => {
