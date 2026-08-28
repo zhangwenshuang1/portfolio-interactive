@@ -54,8 +54,8 @@ function Mosaic() {
   )
 }
 
-// 拼接完成后：整张清晰照片浮现（马赛克块淡出 → 清晰照淡入）
-// 照片被固定在"六块拼图拼成的方形区块"上，视觉上就是六块拼图合体成一张照片
+// 拼接完成后：整张拼好的长方形像卡片一样 3D 翻转，背面揭露出完整照片。
+// 正面是"六块碎块拼合的马赛克面"，翻转 180° 后背面就是那张清晰照片。
 function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
   return (
     <div
@@ -66,37 +66,44 @@ function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
         top: bounds.top,
         width: bounds.width,
         height: bounds.height,
+        perspective: 1600,
       }}
     >
-      {/* 马赛克碎片层：淡出 */}
+      {/* 翻转卡片：正面马赛克拼图 → 翻转露出背面照片 */}
       <motion.div
         className="absolute inset-0"
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ duration: 0.9, delay: 1.4 }}
+        style={{ transformStyle: 'preserve-3d' }}
+        initial={{ rotateY: 0 }}
+        animate={{ rotateY: 180 }}
+        transition={{ duration: 1.5, ease: [0.4, 0.05, 0.1, 0.9], delay: 1.8 }}
       >
-        <Mosaic />
-      </motion.div>
-      {/* 清晰照片层：淡入 */}
-      <motion.div
-        className="absolute inset-0 overflow-hidden bg-black"
-        initial={{ opacity: 0, scale: 1.06 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.9, delay: 1.4, ease: 'easeOut' }}
-      >
-        <img
-          src={FINALE_PHOTO}
-          alt="完整照片"
-          className="h-full w-full object-cover"
-          draggable={false}
-        />
-        {/* 轻扫的高光 */}
+        {/* 正面：六块拼图碎片拼成的马赛克面 */}
         <motion.div
-          className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-          initial={{ x: '-110%' }}
-          animate={{ x: '110%' }}
-          transition={{ duration: 1, delay: 1.6 }}
-        />
+          className="absolute inset-0"
+          style={{ backfaceVisibility: 'hidden' }}
+        >
+          <Mosaic />
+        </motion.div>
+
+        {/* 背面：完整照片（翻转后才可见） */}
+        <motion.div
+          className="absolute inset-0 overflow-hidden bg-black"
+          style={{ backfaceVisibility: 'hidden', rotateY: 180 }}
+        >
+          <img
+            src={FINALE_PHOTO}
+            alt="完整照片"
+            className="h-full w-full object-cover"
+            draggable={false}
+          />
+          {/* 轻扫的高光 */}
+          <motion.div
+            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
+            initial={{ x: '-110%' }}
+            animate={{ x: '110%' }}
+            transition={{ duration: 1, delay: 2.2 }}
+          />
+        </motion.div>
       </motion.div>
     </div>
   )
@@ -105,20 +112,20 @@ function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
 function PuzzleFinale({
   onReplay,
   onReveal,
-  photoBounds = { left: 60, top: 50, width: 1320, height: 880 },
+  photoBounds = { left: 180, top: 120, width: 1320, height: 880 },
 }: PuzzleFinaleProps) {
   const [stage, setStage] = useState<'photo' | 'missing' | 'replay'>('photo')
   const revealed = useRef(false)
 
   // 时间轴驱动阶段推进（这是"网站最后的叙事"，不是系统报错）
-  // photo: 六块拼图已凝成一张完整照片 → 停留约 2 秒
+  // photo: 聚拢好的拼图卡片翻转成完整照片 → 停留片刻
   // missing: 猛然弹出 "ONE PIECE IS MISSING"，一块空白拼图缓缓翻转露出背面文字 → 停留 5 秒
   // replay: 出现 "重新认识我" 按钮
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = []
     timers.push(setTimeout(() => playMergeChime(), 300))
-    timers.push(setTimeout(() => setStage('missing'), 4400)) // 照片停留 2 秒后突然转入缺失叙事
-    timers.push(setTimeout(() => setStage('replay'), 9600)) // 缺失画面停留 5.2 秒后出现按钮
+    timers.push(setTimeout(() => setStage('missing'), 6100)) // 翻转(1.8s后开始,1.5s翻完≈4.8s)后停留片刻再转入缺失叙事
+    timers.push(setTimeout(() => setStage('replay'), 11300)) // 缺失画面停留 5.2 秒后出现按钮
     return () => timers.forEach(clearTimeout)
   }, [])
 
