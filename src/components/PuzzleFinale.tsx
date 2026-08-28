@@ -19,7 +19,7 @@ interface PuzzleFinaleProps {
 
 // ★ 个人照片：把这里换成你自己的照片地址即可。
 // 建议放到 public/ 下，例如 '/my-photo.jpg'。
-const FINALE_PHOTO = 'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=1200&q=80'
+const FINALE_PHOTO = '/full-photo.png'
 
 // 拼接 3×2 马赛克分块（用同一张图的不同裁切模拟"碎片逐渐汇合成照片"）
 function Mosaic() {
