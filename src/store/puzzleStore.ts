@@ -19,12 +19,60 @@ interface PuzzleState {
 }
 
 const PUZZLE_CATEGORIES = [
-  { id: 'photo', title: '摄影', category: 'photography' as const },
-  { id: 'entertainment', title: '综艺实习', category: 'entertainment' as const },
-  { id: 'documentary', title: '纪录片实习', category: 'documentary' as const },
-  { id: 'brand', title: '互联网品牌部实习', category: 'brand' as const },
-  { id: 'ai_comic', title: 'AI漫剧实习', category: 'ai_comic' as const },
-  { id: 'sports', title: '运动', category: 'sports' as const },
+  {
+    id: 'photo',
+    title: '摄影',
+    emoji: '📷',
+    englishTitle: 'SEE',
+    tagline: 'Finding beauty in between.',
+    keywords: ['摄影', '人物', '风景', '摄影工作'],
+    category: 'photography' as const,
+  },
+  {
+    id: 'entertainment',
+    title: '综艺实习',
+    emoji: '🎬',
+    englishTitle: 'DO',
+    tagline: 'Make it happen.',
+    keywords: ['综艺现场', '题库', '嘉宾', '幕后工作'],
+    category: 'entertainment' as const,
+  },
+  {
+    id: 'documentary',
+    title: '纪录片实习',
+    emoji: '🎞️',
+    englishTitle: 'LEAD',
+    tagline: 'From idea to story.',
+    keywords: ['纪录片', '项目统筹', '采访', '拍摄'],
+    category: 'documentary' as const,
+  },
+  {
+    id: 'brand',
+    title: '品牌部实习',
+    emoji: '🤖',
+    englishTitle: 'CREATE',
+    tagline: 'Make ideas visible.',
+    keywords: ['AIGC', '视频', 'AI创作', '工作现场'],
+    category: 'brand' as const,
+  },
+  {
+    id: 'sports',
+    title: '运动',
+    emoji: '🏀',
+    englishTitle: 'MOVE',
+    tagline: 'Go. Try. Keep going.',
+    keywords: ['篮球', '健身', '攀岩', '身体与行动'],
+    category: 'sports' as const,
+  },
+  {
+    id: 'ai_comic',
+    title: '志愿与连接',
+    emoji: '🌱',
+    englishTitle: 'CONNECT',
+    tagline: 'Be part of something.',
+    keywords: ['支教', '社团', '志愿活动', '人与人的连接'],
+    category: 'ai_comic' as const,
+  },
 ]
 
 const SLOT_POSITIONS = [
@@ -45,6 +93,10 @@ export const usePuzzleStore = create<PuzzleState>((set, get) => ({
     const initialPuzzles: Puzzle[] = PUZZLE_CATEGORIES.map((cat, index) => ({
       id: cat.id,
       title: cat.title,
+      emoji: cat.emoji,
+      englishTitle: cat.englishTitle,
+      tagline: cat.tagline,
+      keywords: cat.keywords,
       category: cat.category,
       description: `这是关于${cat.title}的拼图`,
       images: [],

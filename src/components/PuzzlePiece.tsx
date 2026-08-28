@@ -109,17 +109,34 @@ export default function PuzzlePiece({
         <div className="absolute right-7 bottom-6 text-xl text-white/75">✦</div>
         <div className="absolute left-7 bottom-7 text-base text-white/70">〰</div>
 
-        <div className="relative z-10 text-center">
-          <div className="mb-2 text-4xl leading-none">
-            {puzzle.id === 'photo' && '📸'}
-            {puzzle.id === 'entertainment' && '🎬'}
-            {puzzle.id === 'documentary' && '🎥'}
-            {puzzle.id === 'brand' && '💼'}
-            {puzzle.id === 'ai_comic' && '🤖'}
-            {puzzle.id === 'sports' && '⚽'}
+        <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-4 text-center">
+          {/* 图标 */}
+          <div className="mb-2 text-4xl leading-none drop-shadow-sm">{puzzle.emoji}</div>
+
+          {/* 英文大标题 */}
+          <div className="text-3xl font-black tracking-[0.08em] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+            {puzzle.englishTitle}
           </div>
-          <div className="text-[0.72rem] font-black uppercase tracking-[0.16em] text-white/90">
-            {puzzle.title}
+
+          {/* 一行小字副标题 */}
+          <div className="mt-1.5 text-[0.68rem] italic tracking-wide text-white/90 sm:text-xs">
+            {puzzle.tagline}
+          </div>
+
+          {/* 关键词：已读后永久显示；未读时只在 hover 时浮现 */}
+          <div
+            className={`mt-4 flex max-w-[300px] flex-wrap items-center justify-center gap-1.5 ${
+              isHovered || puzzle.isRead ? '' : 'hidden'
+            }`}
+          >
+            {puzzle.keywords.map((kw) => (
+              <span
+                key={kw}
+                className="rounded-full bg-white/30 px-2.5 py-0.5 text-[0.62rem] font-bold text-white shadow-sm backdrop-blur-sm sm:text-xs"
+              >
+                {kw}
+              </span>
+            ))}
           </div>
         </div>
 

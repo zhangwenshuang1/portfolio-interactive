@@ -1,6 +1,10 @@
 export interface Puzzle {
   id: string
   title: string
+  emoji: string
+  englishTitle: string
+  tagline: string
+  keywords: string[]
   category: 'photography' | 'entertainment' | 'documentary' | 'brand' | 'ai_comic' | 'sports'
   description: string
   images: string[]
