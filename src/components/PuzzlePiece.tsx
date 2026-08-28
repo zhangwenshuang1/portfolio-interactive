@@ -111,28 +111,28 @@ export default function PuzzlePiece({
 
         <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-4 text-center">
           {/* 图标 */}
-          <div className="mb-2 text-4xl leading-none drop-shadow-sm">{puzzle.emoji}</div>
+          <div className="mb-3 text-6xl leading-none drop-shadow-md">{puzzle.emoji}</div>
 
           {/* 英文大标题 */}
-          <div className="text-3xl font-black tracking-[0.08em] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
+          <div className="text-5xl font-black tracking-[0.08em] text-white drop-shadow-[0_2px_6px_rgba(0,0,0,0.25)]">
             {puzzle.englishTitle}
           </div>
 
           {/* 一行小字副标题 */}
-          <div className="mt-1.5 text-[0.68rem] italic tracking-wide text-white/90 sm:text-xs">
+          <div className="mt-2 text-sm italic tracking-wide text-white/90 sm:text-base">
             {puzzle.tagline}
           </div>
 
           {/* 关键词：已读后永久显示；未读时只在 hover 时浮现 */}
           <div
-            className={`mt-4 flex max-w-[300px] flex-wrap items-center justify-center gap-1.5 ${
+            className={`mt-5 flex max-w-[360px] flex-wrap items-center justify-center gap-2 ${
               isHovered || puzzle.isRead ? '' : 'hidden'
             }`}
           >
             {puzzle.keywords.map((kw) => (
               <span
                 key={kw}
-                className="rounded-full bg-white/30 px-2.5 py-0.5 text-[0.62rem] font-bold text-white shadow-sm backdrop-blur-sm sm:text-xs"
+                className="rounded-full bg-white/30 px-3 py-1 text-sm font-bold text-white shadow-sm backdrop-blur-sm"
               >
                 {kw}
               </span>
