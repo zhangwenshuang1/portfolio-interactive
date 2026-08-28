@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePuzzleStore } from '../store/puzzleStore'
+import { ASSEMBLY_POSITIONS } from '../store/puzzleStore'
 import PuzzlePiece from './PuzzlePiece'
 import PuzzleFinale from './PuzzleFinale'
 import { playSnap } from '../utils/sounds'
@@ -21,6 +22,7 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
     setHoveredPuzzle,
     updatePuzzlePosition,
     snapPuzzleToSlot,
+    movePuzzleTo,
     resetPuzzlePosition,
     resetAllPuzzles,
   } = usePuzzleStore()
@@ -137,21 +139,20 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
   // 全部六块拼好 → 展示完成画面（需读完全部 story 才播放）
   const allPlaced = puzzles.length > 0 && puzzles.every((p) => p.placed)
   const allRead = puzzles.length > 0 && puzzles.every((p) => p.isRead)
-  // 读完最后一个 story 后，尚未归位的拼图逐块自动吸附到位
-  const autoSnapStartedRef = useRef(false)
+  // 读完最后一个 story 后：六块拼图向中心聚拢——逐块飞向中央，
+  // 凸起凹槽交错咬合，拼成一个完整的方形，再浮现照片。
+  const assembleStartedRef = useRef(false)
   useEffect(() => {
     if (!allRead) {
-      autoSnapStartedRef.current = false
+      assembleStartedRef.current = false
       return
     }
-    if (autoSnapStartedRef.current) return
-    const unPlaced = puzzles.filter((p) => !p.placed).map((p) => p.id)
-    if (unPlaced.length === 0) return
-    autoSnapStartedRef.current = true
-    unPlaced.forEach((id, i) => {
-      setTimeout(() => snapPuzzleToSlot(id), 200 + i * 280)
+    if (assembleStartedRef.current) return
+    assembleStartedRef.current = true
+    puzzles.forEach((p, i) => {
+      setTimeout(() => movePuzzleTo(p.id, ASSEMBLY_POSITIONS[i]), 200 + i * 260)
     })
-  }, [allRead, puzzles, snapPuzzleToSlot])
+  }, [allRead, puzzles, movePuzzleTo])
 
   const unreadCount = puzzles.filter((p) => !p.isRead).length
 
@@ -198,7 +199,7 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
         <div className="absolute left-20 bottom-12 h-24 w-24 rotate-12 rounded-[28px] bg-[#ff9c8a] opacity-60" />
         <div className="absolute right-28 bottom-20 h-24 w-24 rounded-full bg-[#d9b7ff] opacity-60" />
 
-        <div className="absolute inset-0">
+        <div className={`absolute inset-0 ${allRead ? 'pointer-events-none' : ''}`}>
           {puzzles.map((puzzle) => (
             <PuzzlePiece
               key={puzzle.id}

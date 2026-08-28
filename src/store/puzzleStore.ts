@@ -10,6 +10,7 @@ interface PuzzleState {
   markPuzzleAsRead: (id: string) => void
   updatePuzzlePosition: (id: string, position: { x: number; y: number }) => void
   snapPuzzleToSlot: (id: string) => void
+  movePuzzleTo: (id: string, position: { x: number; y: number }) => void
   resetPuzzlePosition: (id: string, fallbackPosition: { x: number; y: number }) => void
   resetAllPuzzles: () => void
   setHoveredPuzzle: (id: string | null) => void
@@ -86,6 +87,18 @@ const SLOT_POSITIONS = [
   { x: 1000, y: 470 },
 ]
 
+// 读完所有故事后：六块拼图向中心聚拢成的"完整方形"紧密布局。
+// 块元素 440，水平/垂直相邻间距均为 440（元素边界相切）→ 凸起凹槽正好互相咬合，
+// 合成一块完整的大拼图（3 列 × 2 行，宽 1320 × 高 880），整体居中于板面(720,490)。
+export const ASSEMBLY_POSITIONS = [
+  { x: 60, y: 50 }, //   photo（左上）
+  { x: 500, y: 50 }, //  ent（中上）
+  { x: 940, y: 50 }, //  doc（右上）
+  { x: 60, y: 490 }, //  brand（左下）
+  { x: 500, y: 490 }, // ai_comic（中下）
+  { x: 940, y: 490 }, // sports（右下）
+]
+
 export const usePuzzleStore = create<PuzzleState>((set, get) => ({
   puzzles: [],
   completedPuzzles: new Set(),
@@ -144,6 +157,16 @@ export const usePuzzleStore = create<PuzzleState>((set, get) => ({
       puzzles: state.puzzles.map((p) => {
         if (p.id !== id) return p
         return { ...p, position: p.slot, placed: true, placedAt: Date.now() }
+      }),
+    }))
+  },
+
+  // 把拼图移动到指定位置（用于读完所有故事后向中心聚拢拼接），并标记为已归位。
+  movePuzzleTo: (id: string, position: { x: number; y: number }) => {
+    set((state) => ({
+      puzzles: state.puzzles.map((p) => {
+        if (p.id !== id) return p
+        return { ...p, position, placed: true, placedAt: Date.now() }
       }),
     }))
   },
