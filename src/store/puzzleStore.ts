@@ -83,8 +83,8 @@ const SLOT_POSITIONS = [
   { x: 520, y: 50 }, //  ent（顶中）
   { x: 1000, y: 50 }, //  doc（右上）
   { x: 40, y: 470 }, //  brand（左下）
-  { x: 520, y: 470 }, // ai_comic（中下）
   { x: 1000, y: 470 }, // sports（右下）
+  { x: 520, y: 470 }, //  ai_comic（中下）
 ]
 
 // 读完所有故事后：六块拼图飞向中央聚拢成的"完整长方形"紧密布局。
@@ -95,8 +95,8 @@ export const ASSEMBLY_POSITIONS = [
   { x: 500, y: 50 }, //  ent（中上）
   { x: 940, y: 50 }, //  doc（右上）
   { x: 60, y: 490 }, //  brand（左下）
-  { x: 500, y: 490 }, // ai_comic（中下）
-  { x: 940, y: 490 }, // sports（右下）
+  { x: 940, y: 490 }, // sports（右下）——其形状=左凸顶凹右/下平，放右下角
+  { x: 500, y: 490 }, //  ai_comic（中下）——其形状=左凹右凹顶凹下平，放中间列
 ]
 
 export const usePuzzleStore = create<PuzzleState>((set, get) => ({
