@@ -51,3 +51,15 @@ button, input, textarea {
 #root {
   min-height: 100vh;
 }
+
+/* —— 读完所有故事后，六块拼图的“磁吸聚合”过渡 ——
+   由 PuzzleBoard 在聚拢期间给承载层挂 .gather-on；
+   直接子级是各 PuzzlePiece 根节点，它们的几何(top/left)统一经过下面
+   这条柔和的同步补间“咻”一下汇到中心咬合，杜绝逐块卡顿。
+   duration 刻意稍短且有 overshoot，仿若被磁铁拽住加速吸附。 */
+.gather-on > * {
+  transition:
+    top 0.6s cubic-bezier(0.16, 0.62, 0.2, 1),
+    left 0.6s cubic-bezier(0.16, 0.62, 0.2, 1);
+  will-change: top, left;
+}

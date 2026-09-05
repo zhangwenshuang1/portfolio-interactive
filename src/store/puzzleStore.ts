@@ -11,6 +11,7 @@ interface PuzzleState {
   updatePuzzlePosition: (id: string, position: { x: number; y: number }) => void
   snapPuzzleToSlot: (id: string) => void
   movePuzzleTo: (id: string, position: { x: number; y: number }) => void
+  collectAllPuzzles: () => void
   resetPuzzlePosition: (id: string, fallbackPosition: { x: number; y: number }) => void
   resetAllPuzzles: () => void
   setHoveredPuzzle: (id: string | null) => void
@@ -168,6 +169,22 @@ export const usePuzzleStore = create<PuzzleState>((set, get) => ({
       puzzles: state.puzzles.map((p) => {
         if (p.id !== id) return p
         return { ...p, position, placed: true, placedAt: Date.now() }
+      }),
+    }))
+  },
+
+  // 读完所有故事 → 六块拼图像被磁铁吸引一样同一时刻向中心聚拢咬合。
+  // 只需一次 set，六块齐步到达组装位（位置动画交给视图层的一次性补间）。
+  collectAllPuzzles: () => {
+    const now = Date.now()
+    set((state) => ({
+      puzzles: state.puzzles.map((p, i) => {
+        const target = ASSEMBLY_POSITIONS[i]
+        // 若已恰好归位，保持不变，只补齐 placedAt
+        if (p.position.x === target.x && p.position.y === target.y) {
+          return { ...p, placed: true, placedAt: p.placedAt ?? now }
+        }
+        return { ...p, position: target, placed: true, placedAt: now }
       }),
     }))
   },

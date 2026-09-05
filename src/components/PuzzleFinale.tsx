@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { playMergeChime } from '../utils/sounds'
 
 // 六块拼图聚拢成的完整方形区块（在 1440×980 逻辑坐标下）：
 // 3×2，每块 440，左上角在 (60,50)，整体 1320×880 —— 正好覆盖 ASSEMBLY_POSITIONS
@@ -89,7 +88,6 @@ function PuzzleFinale({
   // replay: 出现 "重新认识我" 按钮
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = []
-    timers.push(setTimeout(() => playMergeChime(), 300))
     timers.push(setTimeout(() => setStage('missing'), 6100)) // 翻转(1.8s后开始,1.5s翻完≈4.8s)后停留片刻再转入缺失叙事
     timers.push(setTimeout(() => setStage('replay'), 11300)) // 缺失画面停留 5.2 秒后出现按钮
     return () => timers.forEach(clearTimeout)

@@ -1,7 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { usePuzzleStore } from '../store/puzzleStore'
-import { ASSEMBLY_POSITIONS } from '../store/puzzleStore'
 import PuzzlePiece from './PuzzlePiece'
 import PuzzleFinale from './PuzzleFinale'
 
@@ -25,7 +24,6 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
     setHoveredPuzzle,
     updatePuzzlePosition,
     snapPuzzleToSlot,
-    movePuzzleTo,
     resetPuzzlePosition,
     resetAllPuzzles,
   } = usePuzzleStore()
@@ -39,6 +37,8 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
   // 记录本次交互是否真的发生了拖动(移动超过阈值)，用于在拖拽后抑制 click，
   // 避免 "拼好一块就弹出详情页" 的误触。
   const didDragRef = useRef(false)
+  // 是否正处于"读完所有故事后的磁吸聚合"过渡（期间禁止拖拽、随后才揭幕 Finale）
+  const [gatherOn, setGatherOn] = useState(false)
   // 最近一次归位的拼图 id：触发轻微物理"吸附"弹跳（不播放音效）
   const [snapPulseId, setSnapPulseId] = useState<string | null>(null)
 
@@ -84,6 +84,7 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
   }
 
   const handleMouseDown = (event: React.MouseEvent, puzzleId: string) => {
+    if (gatherOn) return
     const activePuzzle = puzzles.find((p) => p.id === puzzleId)
     if (!activePuzzle || !boardRef.current) return
 
@@ -140,20 +141,33 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
   // 全部六块拼好 → 展示完成画面（需读完全部 story 才播放）
   const allPlaced = puzzles.length > 0 && puzzles.every((p) => p.placed)
   const allRead = puzzles.length > 0 && puzzles.every((p) => p.isRead)
-  // 读完最后一个 story 后：六块拼图向中心聚拢——逐块飞向中央，
-  // 凸起凹槽交错咬合，拼成一个完整的方形，再浮现照片。
+  // 读完最后一段 story 后：让六块拼图像被磁铁吸住一样、在同一个瞬问一
+  // 次性扑向中心互相咬合成完整方形。改法：先把全部块置于“带平滑补间”
+  // 的托管期（gatherOn，仅改变 CSS 状态不动坐标），待 DOM 铺好后借助
+  // 一次性 transition 同时位移到组装坐标，杜绝原先逐块 setTimeout 的一
+  // 顿一顿、卡顿感。全程无音效。
   const assembleStartedRef = useRef(false)
   useEffect(() => {
     if (!allRead) {
       assembleStartedRef.current = false
+      setGatherOn(false)
       return
     }
     if (assembleStartedRef.current) return
     assembleStartedRef.current = true
-    puzzles.forEach((p, i) => {
-      setTimeout(() => movePuzzleTo(p.id, ASSEMBLY_POSITIONS[i]), 200 + i * 260)
+
+    // 第一步：切入补间态（此时坐标未变，仅注入 transition，避免首帧跳变）
+    setGatherOn(true)
+
+    // 第二步：等补间态已被浏览器样式 recalc 拍到（跑两次 rAF），再统一切到组装位。
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        usePuzzleStore.getState().collectAllPuzzles()
+        // 聚合动画跑完后撤下补间态、允许 Finale 揭幕（无音效）。
+        window.setTimeout(() => setGatherOn(false), 800)
+      })
     })
-  }, [allRead, puzzles, movePuzzleTo])
+  }, [allRead, puzzles])
 
   const unreadCount = puzzles.filter((p) => !p.isRead).length
 
@@ -200,7 +214,9 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
         <div className="absolute left-20 bottom-12 h-24 w-24 rotate-12 rounded-[28px] bg-[#ff9c8a] opacity-60" />
         <div className="absolute right-28 bottom-20 h-24 w-24 rounded-full bg-[#d9b7ff] opacity-60" />
 
-        <div className={`absolute inset-0 ${allRead ? 'pointer-events-none' : ''}`}>
+        <div
+          className={`absolute inset-0 ${allRead ? 'pointer-events-none' : ''} ${gatherOn ? 'gather-on' : ''}`}
+        >
           {puzzles.map((puzzle) => (
             <PuzzlePiece
               key={puzzle.id}
@@ -231,7 +247,7 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
         {/* 拼图全部完成（看完所有 story 并归位）后的叙事结尾：
             六块拼图聚拢成方形 → 方块上浮现照片 → 缺一块 → 翻转 → 重新认识我 */}
         <AnimatePresence>
-          {allRead && allPlaced && (
+          {allRead && allPlaced && !gatherOn && (
             <PuzzleFinale
               key="finale"
               photoBounds={PHOTO_BOUNDS}
