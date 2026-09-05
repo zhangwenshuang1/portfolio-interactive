@@ -215,7 +215,7 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
         <div className="absolute right-28 bottom-20 h-24 w-24 rounded-full bg-[#d9b7ff] opacity-60" />
 
         <div
-          className={`absolute inset-0 ${allRead ? 'pointer-events-none' : ''} ${gatherOn ? 'gather-on' : ''}`}
+          className={`absolute inset-0 ${allRead ? 'pointer-events-none' : ''} ${gatherOn ? 'gather-on' : ''} ${allRead && allPlaced && !gatherOn ? 'fade-colour' : ''}`}
         >
           {puzzles.map((puzzle) => (
             <PuzzlePiece

@@ -12,17 +12,18 @@ interface PhotoBounds {
 
 interface PuzzleFinaleProps {
   onReplay: () => void
-  onReveal: () => void // 翻转背面展示时告知上层（可选）
+  onReveal: () => void // 背面文字展示时告知上层（可选）
   photoBounds?: PhotoBounds
 }
 
-// ★ 个人照片：把这里换成你自己的照片地址即可。
-// 建议放到 public/ 下，例如 '/my-photo.jpg'。
+// ★ 你要替换的"最终合照"：放到项目 public/ 目录后换成对应路径即可。
+//    例如在 public/final-me.png 就写 '/final-me.png'；也可以放 /src/assets 后 import 引入。
 const FINALE_PHOTO = '/full-photo.png'
 
-// 拼接完成后：整块拼好的长方形像卡片一样 3D 翻转。
-// 照片本身就是由六块拼图拼成的那一大块——翻转时正面就是那六块真实拼图（卡片正面透明、透出下方拼图），
-// 翻到底后面露出的是完整照片。绝不额外切成"新的六块碎片"。
+// 拼合完成的叙事：
+// 六块拼图刚拼好时还是各自五颜六色的色块；下面这张最终合照在同一块长方形区域里
+// 由透明慢慢浮现（opacity 0→1）。而六块彩色拼图会被 PuzzleBoard 在其上叠加的
+// .fade-colour 同节奏淡出，于是得到"五彩色块…渐渐让位给照片"的交叉显现。
 function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
   return (
     <div
@@ -33,43 +34,25 @@ function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
         top: bounds.top,
         width: bounds.width,
         height: bounds.height,
-        perspective: 1800,
       }}
     >
-      {/* 翻转卡片：正面透出下方真实六块拼图 → 翻转露出背面完整照片 */}
+      {/* 完整照片（无翻转，直接淡入浮现） */}
+      <motion.img
+        src={FINALE_PHOTO}
+        alt="完整照片"
+        className="absolute inset-0 h-full w-full object-cover"
+        draggable={false}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.1, ease: 'easeInOut', delay: 0.15 }}
+      />
+      {/* 浮现结束后的柔和高光掠过 */}
       <motion.div
-        className="absolute inset-0"
-        style={{ transformStyle: 'preserve-3d' }}
-        initial={{ rotateY: 0 }}
-        animate={{ rotateY: 180 }}
-        transition={{ duration: 1.5, ease: [0.4, 0.05, 0.1, 0.9], delay: 1.6 }}
-      >
-        {/* 正面：全透明 → 露出下方真实的六块拼图（不额外渲染碎片层） */}
-        <div
-          className="absolute inset-0"
-          style={{ backfaceVisibility: 'hidden', transform: 'translateZ(0)' }}
-        />
-
-        {/* 背面：完整照片（只这一面有内容，翻转后才转向用户） */}
-        <motion.div
-          className="absolute inset-0 overflow-hidden bg-black"
-          style={{ backfaceVisibility: 'hidden', rotateY: 180 }}
-        >
-          <img
-            src={FINALE_PHOTO}
-            alt="完整照片"
-            className="h-full w-full object-cover"
-            draggable={false}
-          />
-          {/* 轻扫的高光 */}
-          <motion.div
-            className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-            initial={{ x: '-110%' }}
-            animate={{ x: '110%' }}
-            transition={{ duration: 1, delay: 2.0 }}
-          />
-        </motion.div>
-      </motion.div>
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/15 to-transparent"
+        initial={{ x: '-115%' }}
+        animate={{ x: '115%' }}
+        transition={{ duration: 1.1, delay: 1.5, ease: 'easeInOut' }}
+      />
     </div>
   )
 }
@@ -88,8 +71,9 @@ function PuzzleFinale({
   // replay: 出现 "重新认识我" 按钮
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = []
-    timers.push(setTimeout(() => setStage('missing'), 6100)) // 翻转(1.8s后开始,1.5s翻完≈4.8s)后停留片刻再转入缺失叙事
-    timers.push(setTimeout(() => setStage('replay'), 11300)) // 缺失画面停留 5.2 秒后出现按钮
+    // 照片浮现(延时0.15+淡入1.1≈1.3s)后留足 2s 看合照，再转入“缺一块”叙事
+    timers.push(setTimeout(() => setStage('missing'), 3300))
+    timers.push(setTimeout(() => setStage('replay'), 9100)) // 缺失叙事停留
     return () => timers.forEach(clearTimeout)
   }, [])
 

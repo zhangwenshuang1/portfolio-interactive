@@ -63,3 +63,19 @@ button, input, textarea {
     left 0.6s cubic-bezier(0.16, 0.62, 0.2, 1);
   will-change: top, left;
 }
+
+/* —— 拼合完成后：彩色拼图“让位”给浮现的照片 ——
+   PuzzleBoard 在 Finale 照片演示阶段给六块拼图的宿主挂 .fade-colour，
+   让下方真实拼图的彩色逐渐淡出（与小延迟同频出现的照片淡入形成交叉显现）。 */
+.fade-colour {
+  animation: piece-colour-fade 1.05s cubic-bezier(0.55, 0, 0.3, 1) 0.22s forwards;
+}
+
+@keyframes piece-colour-fade {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
