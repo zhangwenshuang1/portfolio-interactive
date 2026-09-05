@@ -109,14 +109,20 @@ export default function PuzzlePiece({
       <motion.button
         onClick={onClick}
         onMouseDown={onMouseDown}
-        className={`relative flex h-full w-full flex-col items-center justify-center overflow-hidden bg-gradient-to-br ${getColorClass()} p-3 text-white ${puzzle.isRead ? '' : 'opacity-80'}`}
+        className={`relative flex h-full w-full flex-col items-center justify-center p-3 ${puzzle.isRead ? '' : 'opacity-80'}`}
         style={{ clipPath: pieceShape, borderRadius: '0' }}
         whileHover={puzzle.placed ? { scale: 1 } : { scale: 1.04 }}
         whileTap={{ scale: 0.98 }}
       >
-        <div className="absolute left-8 top-5 h-7 w-20 -rotate-6 bg-white/35 shadow-sm" />
-        <div className="absolute right-7 bottom-6 text-xl text-white/75">✦</div>
-        <div className="absolute left-7 bottom-7 text-base text-white/70">〰</div>
+        {/* 大号彩底：比外形大出一圈(<inset>覆盖 440→最远凸齿约+40)，使外凸部分真正被着色可见 */}
+        <div
+          className={`pointer-events-none absolute -inset-12 bg-gradient-to-br ${getColorClass()}`}
+          aria-hidden
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-black/5 to-transparent" />
+        <div className="pointer-events-none absolute left-8 top-5 h-7 w-20 -rotate-6 bg-white/35 shadow-sm" />
+        <div className="pointer-events-none absolute right-7 bottom-6 text-xl text-white/75">✦</div>
+        <div className="pointer-events-none absolute left-7 bottom-7 text-base text-white/70">〰</div>
 
         <div className="relative z-10 flex h-full w-full flex-col items-center justify-center px-4 text-center">
           {/* 图标 */}
@@ -151,7 +157,7 @@ export default function PuzzlePiece({
 
         {!puzzle.isRead && (
           <motion.div
-            className="absolute inset-0 bg-black/15"
+            className="pointer-events-none absolute -inset-12 bg-black/15"
             animate={{ opacity: [0.12, 0.25, 0.12] }}
             transition={{ duration: 2.2, repeat: Infinity }}
           />
