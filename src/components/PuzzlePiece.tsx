@@ -85,8 +85,20 @@ export default function PuzzlePiece({
   const driftX = !puzzle.placed && pointerShift.x ? ((pointerShift.x - 640) / 30) * 0.35 : 0
   const driftY = !puzzle.placed && pointerShift.y ? ((pointerShift.y - 440) / 24) * 0.35 : 0
 
+  // 每块的"主色"：交给泡泡/tab 同款质感。
+  // 读前默认灰阶，也无需高亮，观 block 的类别色；给 hover 一缕淡淡同色柔光。
+  const glowRGBs: Record<string, string> = {
+    photography: '239, 68, 104',
+    entertainment: '168, 90, 233',
+    documentary: '248, 180, 40',
+    brand: '48, 135, 255',
+    ai_comic: '251, 146, 60',
+    sports: '34, 197, 94',
+  }
+  const rgb = glowRGBs[puzzle.category] ?? '148, 163, 184'
+
   const idleShadow = 'drop-shadow(0 12px 24px rgba(0, 0, 0, 0.08))'
-  const hoverShadow = 'drop-shadow(0 20px 30px rgba(255, 111, 180, 0.32))'
+  const hoverShadow = `drop-shadow(0 0 22px rgba(${rgb}, 0.42)) drop-shadow(0 14px 26px rgba(${rgb}, 0.3))`
 
   return (
     <motion.div
@@ -98,11 +110,12 @@ export default function PuzzlePiece({
       onHoverStart={onHover}
       onHoverEnd={onHoverEnd}
       animate={{
-        scale: snapPulse ? [1, 1.07, 0.99, 1] : isHovered && !puzzle.placed ? 1.08 : 1,
-        rotate: isDragging ? 6 : isHovered && !puzzle.placed ? -3 : 0,
+        scale: snapPulse ? [1, 1.07, 0.99, 1] : isHovered && !puzzle.placed ? 1.06 : 1,
+        rotate: isDragging ? 6 : isHovered && !puzzle.placed ? -2 : 0,
         x: isDragging ? 10 : driftX,
         y: isDragging ? 12 : driftY,
-        filter: isHovered && !puzzle.placed ? hoverShadow : idleShadow,
+        // hover 一律给本块原色的淡淡光晕（含已归位的块）
+        filter: isHovered ? hoverShadow : idleShadow,
       }}
       transition={{ type: 'spring', stiffness: 250, damping: 22 }}
     >
@@ -163,13 +176,7 @@ export default function PuzzlePiece({
           />
         )}
 
-        {isHovered && (
-          <motion.div
-            className="absolute inset-0 border-[3px] border-white/95"
-            animate={{ boxShadow: ['0 0 0 2px rgba(255,255,255,0.6)', '0 0 0 14px rgba(255,255,255,0.18)'] }}
-            transition={{ duration: 0.8, repeat: Infinity }}
-          />
-        )}
+        {/* hover 时的白边已去掉：视觉效果完全交由外层按本块原色的 drop-shadow 光晕承担 */}
       </motion.button>
     </motion.div>
   )

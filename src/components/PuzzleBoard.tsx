@@ -4,7 +4,6 @@ import { usePuzzleStore } from '../store/puzzleStore'
 import { ASSEMBLY_POSITIONS } from '../store/puzzleStore'
 import PuzzlePiece from './PuzzlePiece'
 import PuzzleFinale from './PuzzleFinale'
-import { playSnap } from '../utils/sounds'
 
 interface PuzzleBoardProps {
   onSelectPuzzle: (id: string) => void
@@ -40,16 +39,14 @@ export default function PuzzleBoard({ onSelectPuzzle, onReplay }: PuzzleBoardPro
   // 记录本次交互是否真的发生了拖动(移动超过阈值)，用于在拖拽后抑制 click，
   // 避免 "拼好一块就弹出详情页" 的误触。
   const didDragRef = useRef(false)
-  // 最近一次归位的拼图 id：用来触发轻微物理"吸附"弹跳 + 提示音
+  // 最近一次归位的拼图 id：触发轻微物理"吸附"弹跳（不播放音效）
   const [snapPulseId, setSnapPulseId] = useState<string | null>(null)
 
-  // 统计已归位块数，每当新增一块就播放吸附声、并触发该块的弹跳
+  // 统计已归位块数，每当新增一块就轻微弹跳一下（无提示音）
   const placedCount = puzzles.filter((p) => p.placed).length
   const placedCountRef = useRef(placedCount)
   useEffect(() => {
     if (placedCount > placedCountRef.current) {
-      const diff = placedCount - placedCountRef.current
-      playSnap(placedCount + diff - 1)
       const lastPlaced = puzzles
         .filter((p) => p.placed)
         .sort((a, b) => (b.placedAt ?? 0) - (a.placedAt ?? 0))[0]

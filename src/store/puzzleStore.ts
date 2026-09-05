@@ -76,15 +76,16 @@ const PUZZLE_CATEGORIES = [
   },
 ]
 
-// 6 块拼图初始槽位：分发在板面(1440×980)四角 + 顶中 + 中下，
-// 彼此分离、中间留空，让"读完后六块飞向中央聚拢"的动作清晰可见。
+// 6 块拼图初始槽位：阅读前以 3 列 × 2 行排布，但每块之间留出明显空隙、
+// 绝不重叠（每块 440，列/行间距都比 440 大）。每个故事看完后用户可把该块
+// 拖回其槽位，全部读完后再统一"飞向中央聚拢咬合"成一张完整大拼图。
 const SLOT_POSITIONS = [
-  { x: 40, y: 50 }, //   photo（左上）
-  { x: 520, y: 50 }, //  ent（顶中）
-  { x: 1000, y: 50 }, //  doc（右上）
-  { x: 40, y: 470 }, //  brand（左下）
-  { x: 1000, y: 470 }, // sports（右下）
-  { x: 520, y: 470 }, //  ai_comic（中下）
+  { x: 24, y: 32 }, //   photo（左上）
+  { x: 500, y: 32 }, //  ent（中上）
+  { x: 976, y: 32 }, //  doc（右上）
+  { x: 24, y: 516 }, //  brand（左下）
+  { x: 976, y: 516 }, // sports（右下）
+  { x: 500, y: 516 }, //  ai_comic（中下）
 ]
 
 // 读完所有故事后：六块拼图飞向中央聚拢成的"完整长方形"紧密布局。
@@ -119,8 +120,8 @@ export const usePuzzleStore = create<PuzzleState>((set, get) => ({
       isRead: false,
       placed: false,
       position: {
-        x: SLOT_POSITIONS[index].x + (Math.random() * 60 - 30),
-        y: SLOT_POSITIONS[index].y + (Math.random() * 40 - 20),
+        x: SLOT_POSITIONS[index].x,
+        y: SLOT_POSITIONS[index].y,
       },
       slot: SLOT_POSITIONS[index],
     }))
