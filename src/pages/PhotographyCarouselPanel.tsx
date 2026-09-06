@@ -3,6 +3,7 @@ import { motion } from 'framer-motion'
 import type { Puzzle } from '../types'
 import { usePuzzleStore } from '../store/puzzleStore'
 import PhotoCoverFlow from '../components/PhotoCoverFlow'
+import PhotoIntroStage from './PhotoIntroStage'
 
 interface PanelProps {
   puzzle: Puzzle
@@ -10,13 +11,14 @@ interface PanelProps {
 }
 
 /**
- * 摄影拼图的“直接进入作品集”详情面板。
- * 与通用 DetailPage 保持同一套视觉语言，但主体是一整条封面流，
- * 不再显示通用模板里的占位照片 / 演示视频。
+ * 摄影拼图的详情面板。
+ * 分两幕：先展示“拍照现场”的场景幕（散乱浮现），点开始进入轮播。
+ * 轮播以封面流浏览全部 24 张作品：每 0.5s 循环、鼠标悬停可暂停。
  */
 export default function PhotographyCarouselPanel({ puzzle, onClose }: PanelProps) {
   const markPuzzleAsRead = usePuzzleStore((s) => s.markPuzzleAsRead)
   const [leaving, setLeaving] = useState(false)
+  const [showGallery, setShowGallery] = useState(false)
 
   const handleClose = () => {
     if (leaving) return
@@ -56,23 +58,30 @@ export default function PhotographyCarouselPanel({ puzzle, onClose }: PanelProps
           </button>
         </div>
 
-        <p className="mt-4 text-sm font-semibold tracking-wide text-gray-400">
-          摄影，是我在平凡缝隙里捕捉光的方式 —— 左右滑动，或轻轻点下，看每一张被记住的瞬间走到台前。
-        </p>
+        {showGallery && (
+          <div className="mt-2 text-xs font-semibold text-gray-400 sm:text-sm">
+            点一点中间的 ‹ › 或左右画面，都能切换；鼠标停在画面上时轮播会暂停。
+          </div>
+        )}
       </motion.div>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col justify-center px-4 py-5 sm:px-6 lg:px-8">
-        <motion.div
-          initial={{ opacity: 0, y: 14 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.18, duration: 0.45 }}
-        >
-          <PhotoCoverFlow />
-        </motion.div>
-
-        <p className="mt-5 text-center text-xs font-semibold text-gray-400">
-          把鼠标停在画面上可暂停轮播，用 ‹ › 键或点两侧作品可手动切换
-        </p>
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-4 sm:px-6 lg:px-8">
+        {showGallery ? (
+          <div className="my-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, ease: 'easeOut' }}
+            >
+              <PhotoCoverFlow />
+            </motion.div>
+            <p className="mt-4 text-center text-xs font-semibold text-gray-400">
+              鼠标移开画面即自动继续，看完 24 张会从头再循环一遍
+            </p>
+          </div>
+        ) : (
+          <PhotoIntroStage onBegin={() => setShowGallery(true)} />
+        )}
       </div>
     </motion.div>
   )

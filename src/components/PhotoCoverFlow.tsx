@@ -2,14 +2,14 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 
 // ---------------------------------------------------------------------------
-// 摄影作品：封面流（Cover Flow）
-//   - 素材：public/photo-works/01.jpg … (按命名顺序，均为竖幅作品)
-//   - 交互：点中间“< >”或点左右作品推回中央；中央放大，左右可见上一/下一张。
-//   - 自动轮播：间隔前进到末尾停下；把鼠标放在舞台上方可暂停；移开继续。
+// 摄影封面流（Cover Flow）
+//   - 素材：public/photo-works/001.jpg … 024.jpg（共24张，命名顺序即播放顺序）
+//   - 循环：每张停留 0.5s 自动换下一张，播完 24 接着从第 1 张再开始；
+//   - 交互：鼠标停到画面 / 下方指示上会暂停，移开继续；点图或 ‹ › 可手动切换。
 // ---------------------------------------------------------------------------
 
-const COUNT = 14
-const pad = (i: number) => i.toString().padStart(2, '0')
+const COUNT = 24
+const pad = (i: number) => i.toString().padStart(3, '0')
 const buildList = Array.from({ length: COUNT }, (_, i) => ({
   src: `/photo-works/${pad(i + 1)}.jpg`,
   num: i + 1,
@@ -26,7 +26,8 @@ const T2 = 0.72
 const T3 = 0.5
 const T4 = 0.32
 
-const AUTO_MS = 3400
+// 每张仅在屏幕上停留 0.5 秒，随后无缝进入下一张
+const AUTO_MS = 500
 
 function useStageWidth<T extends HTMLElement>() {
   const ref = useRef<T | null>(null)
@@ -78,12 +79,12 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
 
   return (
     <div className={className}>
-      <div
-        ref={stageRef}
-        className="relative select-none overflow-hidden"
-        style={{ height: CARD_H + 10 }}
-        onMouseEnter={() => setPaused(true)}
-        onMouseLeave={() => setPaused(false)}
+        <div
+          ref={stageRef}
+          className="relative select-none overflow-hidden"
+          style={{ height: CARD_H + 10, maxHeight: 'calc(92vh - 220px)' }}
+          onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
       >
         {/* 米白衬底：暖色底板把整行作品框起来，大页面上不显得空（仿首页拼图那块米白底） */}
         <div
@@ -189,10 +190,10 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
         </button>
       </div>
 
-      {/* Dot + 序号信息 */}
-      <div className="mt-5 flex flex-col items-center gap-2.5">
+      {/* 指示小点（24 个位置略�挤，用紧凑小点并允许换行） */}
+      <div className="mt-4 flex flex-col items-center gap-2">
         <div
-          className="flex items-center gap-1.5"
+          className="flex max-w-[560px] flex-wrap items-center justify-center gap-x-1.5 gap-y-2"
           onMouseEnter={() => setPaused(true)}
           onMouseLeave={() => setPaused(false)}
         >
@@ -201,9 +202,9 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
               key={photo.src}
               aria-label={`到第 ${i + 1} 张`}
               onClick={() => setCurrent(i)}
-              className="relative h-2 rounded-full transition-all duration-300"
+              className="h-2 rounded-full transition-all duration-300"
               style={{
-                width: i === current ? 22 : 8,
+                width: i === current ? 16 : 6,
                 background: i === current ? '#ff7eb6' : '#d9b8cc',
               }}
             />
