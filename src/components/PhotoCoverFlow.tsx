@@ -53,30 +53,19 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
   const { ref: stageRef, width: stageW } = useStageWidth<HTMLDivElement>()
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(false)
-  const prevIdx = useRef(0)
 
-  const canGo = (d: number) => {
-    const next = current + d
-    return next >= 0 && next <= COUNT - 1
-  }
-
-  const goTo = useCallback((next: number) => {
-    const clamped = Math.max(0, Math.min(COUNT - 1, next))
-    prevIdx.current = current
-    setCurrent(clamped)
-  }, [current])
-
+  // 轮播的上一张/下一张：两端做无缝循环（14 之后回到 1，1 之前到 14）
   const next = useCallback(() => {
-    if (current < COUNT - 1) goTo(current + 1)
-  }, [current, goTo])
+    setCurrent((c) => (c + 1) % COUNT)
+  }, [])
 
   const prev = useCallback(() => {
-    if (current > 0) goTo(current - 1)
-  }, [current, goTo])
+    setCurrent((c) => (c - 1 + COUNT) % COUNT)
+  }, [])
 
-  // 自动轮播
+  // 自动轮播：循环往复，到尾自动回到开头，不强停
   useEffect(() => {
-    if (paused || current >= COUNT - 1) return
+    if (paused) return
     const t = window.setTimeout(next, AUTO_MS)
     return () => window.clearTimeout(t)
   }, [current, paused, next])
@@ -146,9 +135,9 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
                   tabIndex={0}
                   aria-label={`作品 ${photo.num}`}
                   aria-current={active ? 'true' : undefined}
-                  onClick={() => goTo(i)}
+                  onClick={() => setCurrent(i)}
                   onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') goTo(i)
+                    if (e.key === 'Enter' || e.key === ' ') setCurrent(i)
                   }}
                   className="relative cursor-pointer overflow-hidden rounded-[20px] border-4 border-white/90 shadow-[0_16px_36px_rgba(30,20,40,0.18)] transition-shadow duration-300 hover:shadow-[0_20px_46px_rgba(255,117,170,0.28)]"
                   style={{
@@ -187,16 +176,14 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
         <button
           aria-label="上一张"
           onClick={prev}
-          disabled={!canGo(-1)}
-          className="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/80 bg-white/70 text-3xl font-black text-gray-700 shadow-lg backdrop-blur transition hover:bg-white disabled:pointer-events-none disabled:opacity-30"
+          className="absolute left-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/80 bg-white/70 text-3xl font-black text-gray-700 shadow-lg backdrop-blur transition hover:bg-white"
         >
           ‹
         </button>
         <button
           aria-label="下一张"
           onClick={next}
-          disabled={!canGo(1)}
-          className="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/80 bg-white/70 text-3xl font-black text-gray-700 shadow-lg backdrop-blur transition hover:bg-white disabled:pointer-events-none disabled:opacity-30"
+          className="absolute right-3 top-1/2 z-20 flex h-12 w-12 -translate-y-1/2 items-center justify-center rounded-full border-2 border-white/80 bg-white/70 text-3xl font-black text-gray-700 shadow-lg backdrop-blur transition hover:bg-white"
         >
           ›
         </button>
@@ -213,7 +200,7 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
             <button
               key={photo.src}
               aria-label={`到第 ${i + 1} 张`}
-              onClick={() => goTo(i)}
+              onClick={() => setCurrent(i)}
               className="relative h-2 rounded-full transition-all duration-300"
               style={{
                 width: i === current ? 22 : 8,
