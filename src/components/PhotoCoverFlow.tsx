@@ -1,17 +1,17 @@
 import { useCallback, useEffect, useState } from 'react'
 import { motion } from 'framer-motion'
+import { rollAt, ROLL_SIZE } from '../lib/photoRoll'
 
 // ---------------------------------------------------------------------------
 // 摄影封面流（Cover Flow）
-//   - 素材：public/photo-works/001.jpg … 024.jpg（共24张，命名顺序即播放顺序）
-//   - 循环：每张停留 0.5s 自动换下一张，播完 24 接着从第 1 张再开始；
+//   - 素材：public/photo-works/*.jpg（现 001 …按序；数量跟着你的「拍照」目录走）
+//   - 循环：每张停留 1s 自动换下一张，播完再回到第 1 张；
 //   - 交互：鼠标停到画面 / 下方指示上会暂停，移开继续；点图或 ‹ › 可手动切换。
 // ---------------------------------------------------------------------------
 
-const COUNT = 25
-const pad = (i: number) => i.toString().padStart(3, '0')
+const COUNT = ROLL_SIZE
 const buildList = Array.from({ length: COUNT }, (_, i) => ({
-  src: `/photo-works/${pad(i + 1)}.jpg`,
+  src: rollAt(i + 1),
   num: i + 1,
 }))
 
@@ -71,7 +71,7 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
           className="pointer-events-none absolute inset-y-1 left-0 right-0 z-0 rounded-[30px] border border-[#f0e4d2]/70 bg-[linear-gradient(180deg,#fdfaf4,#f6efe1)] shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_26px_70px_rgba(190,155,115,0.14)]"
         />
         {/* 环形作品台：当前位置左右各取几张，用 % 算出真正的“第 N+1 张”，
-            因此中央永远是相册里挨着排序的下一张；第 25 张的右侧直接回落到第 1 张。 */}
+            因此中央永远是相册里挨着排序的下一张；最后一张的右侧直接回落到第 1 张。 */}
         {Array.from({ length: VIEW_W }, (_, k) => {
           const rel = k - Math.floor(VIEW_W / 2)
           const idx = (((current + rel) % COUNT) + COUNT) % COUNT
@@ -120,7 +120,7 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
                 }}
               >
                 <img
-                  src={`/photo-works/${pad(id)}.jpg`}
+                  src={rollAt(id)}
                   alt={`摄影作品 ${id}`}
                   loading="lazy"
                   draggable={false}

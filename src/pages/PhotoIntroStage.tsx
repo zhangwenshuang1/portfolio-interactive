@@ -1,36 +1,45 @@
 import { motion } from 'framer-motion'
+import { ROLL_SIZE, rollAt } from '../lib/photoRoll'
 
-// 场景幕：把举着相机 / 现场拍照的幕后照片沿外圈椭圆铺满，
-// 中间完全留空给「一句话定位 + 开始按钮」——照片不会被中心挡住、
-// 彼此也不互压，任何窗口窄都会自动缩放绕圈半径。
+// 场景幕：把整本摄影作品沿外圈散开环绕中央文案，
+// 中央留空给「定位 + 开始按钮」——照片不是等距站成整齐圆圈，
+// 而是带着长度/角度微妙差异的松散绕圈，像随手贴在光屏边上的宝丽来。
 
-const SCENES = [
-  '/scene-shots/scene-01.jpg',
-  '/scene-shots/scene-02.jpg',
-  '/scene-shots/scene-03.jpg',
-  '/scene-shots/scene-04.jpg',
-  '/scene-shots/scene-05.jpg',
-  '/scene-shots/scene-06.jpg',
-  '/scene-shots/scene-07.jpg',
-  '/scene-shots/scene-08.jpg',
-  '/scene-shots/scene-09.jpg',
-  '/scene-shots/scene-10.jpg',
-  '/scene-shots/scene-11.jpg',
-  '/scene-shots/scene-12.jpg', // 新增：+.jpg
-]
+// 由实际作品总数生成外圈照片：001.jpg 起，order 即文件排序
+const N = Math.min(ROLL_SIZE, 14) // 环绕区域能舒服容纳的数量
+const SCENES = Array.from({ length: N }, (_, i) => rollAt(i + 1))
 
-const N = SCENES.length
-// 每条照片沿椭圆外圈循环定位（径向留出半张卡片到中心），主/次轴不对称制造深度感
-const RAD = 46
+const PRE_ANGLES = [
+  0,
+  Math.PI * 0.47,
+  Math.PI * 0.91,
+  Math.PI * 1.38,
+  Math.PI * 1.86,
+  Math.PI * 2.23,
+  Math.PI * 2.7,
+  Math.PI * 3.12,
+  Math.PI * 3.61,
+  Math.PI * 4.03,
+  Math.PI * 4.49,
+  Math.PI * 4.96,
+  Math.PI * 5.41,
+  Math.PI * 5.9,
+].map((x) => x - Math.PI / 2)
+
+// 每条随机化径向权重与相位，把“正圆/标准椭圆”打散成自然散布
 const RING = SCENES.map((src, i) => {
-  // 顶部(12 点方向)开始顺时针铺一整圈，让每张都大概朝向圆心
-  const a = (i / N) * Math.PI * 2 - Math.PI / 2
+  const seed = (i % 3) / 3 // 0 ~ 0.66 做轻微错开
+  const a = PRE_ANGLES[i % PRE_ANGLES.length] + seed * 0.16
+  // 径向不是同一个半径：第 i 张在 0%~44% 范围内来回深浅
+  const radial = 0.5 + 0.2 * ((i * 7 + 3) % 5)
+  const rx = 46 * radial
+  const ry = rx * (i % 2 ? 1.32 : 1)
   return {
     src,
-    x: 50 + (RAD / 1.05) * Math.cos(a),
-    y: 50 + (RAD / 1.8) * Math.sin(a),
-    r: -14 + i * (30 / N), // 微错开就不呆板
-    dy: 0.3 + i * 0.08,
+    x: 50 + Math.cos(a) * (rx / 1.05 + (i % 4 === 0 ? 6 : i % 4 === 2 ? -5 : 0)),
+    y: 50 + Math.sin(a) * (ry / 1.95 + (i % 3 === 0 ? 7 : i % 3 === 2 ? -4 : 0)),
+    r: -14 + i * (30 / N),
+    dy: 0.32 + i * 0.055,
   }
 })
 
@@ -113,7 +122,7 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             </button>
 
             <p className="text-[11px] font-semibold text-[#4c3f2a] [filter:drop-shadow(0_1px_4px_rgba(255,249,241,0.95))]">
-              25 张作品 · 无缝循环 · 悬停即可暂停
+              {ROLL_SIZE} 幅作品 · 无缝循环 · 悬停即可暂停
             </p>
           </motion.div>
         </div>
