@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { usePuzzleStore } from '../store/puzzleStore'
+import PhotographyCarouselPanel from './PhotographyCarouselPanel'
 
 interface DetailPageProps {
   puzzleId: string
@@ -12,6 +13,11 @@ export default function DetailPage({ puzzleId, onClose }: DetailPageProps) {
 
   if (!puzzle) {
     return null
+  }
+
+  // 摄影块：不用通用模板，直接进入“作品集封面流”
+  if (puzzle.category === 'photography') {
+    return <PhotographyCarouselPanel puzzle={puzzle} onClose={onClose} />
   }
 
   const handleClose = () => {
