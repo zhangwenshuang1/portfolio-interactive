@@ -22,20 +22,23 @@ const SCENES = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-shots/${pad(
  *  相框里用 object-contain 保留照片本身比例（不裁切），相框外留白由白色纸片填充。
  */
 const TILES: Array<{ top: number; left: number; size: number; rot: number }> = [
-  // —— 上排：整宽稀疏散布，形成一条不规则的“地平线”带，照片主体都落在文字区上方 ——
-  { top: 4, left: 2, size: 11, rot: -6 },
-  { top: 10, left: 15, size: 9, rot: 4 },
-  { top: 3, left: 27, size: 12, rot: 2 },
-  { top: 11, left: 41, size: 8, rot: -3 },
-  { top: 3, left: 52, size: 11, rot: 5 },
-  { top: 9, left: 65, size: 9, rot: -4 },
-  { top: 3, left: 77, size: 12, rot: 3 },
-  { top: 9, left: 90, size: 8, rot: -5 },
-  // —— 中排：只放左右两端，绝不进入中间文字/按钮的活动带 ——
-  { top: 33, left: 1, size: 6, rot: 2 },
-  { top: 60, left: 1, size: 6, rot: -3 },
-  { top: 33, left: 93, size: 6, rot: -2 },
-  { top: 60, left: 93, size: 6, rot: 3 },
+  // 四周“片段墙”：上、左、右、下都铺几条，各自留缝，绝不进中央文字 CTA 带；
+  // 大小有意错开（不只一条等距环），既有贴满的浓度又有参差的节奏，中心始终清爽。
+  // —— 上沿 ——
+  { top: 4, left: 4, size: 13, rot: -6 },
+  { top: 9, left: 18, size: 10, rot: 4 },
+  { top: 3, left: 30, size: 14, rot: 2 },
+  { top: 10, left: 46, size: 9, rot: -3 },
+  { top: 3, left: 58, size: 13, rot: 5 },
+  { top: 9, left: 72, size: 10, rot: -4 },
+  { top: 4, left: 84, size: 12, rot: 3 },
+  // —— 左右边缘 ——
+  { top: 26, left: 2, size: 11, rot: -3 },
+  { top: 26, left: 87, size: 11, rot: 3 },
+  { top: 43, left: 2, size: 12, rot: 4 },
+  { top: 43, left: 86, size: 12, rot: -4 },
+  // —— 下沿（偏左条一条；右侧留给收尾不抢 CTA） ——
+  { top: 62, left: 6, size: 11, rot: -2 },
 ]
 
 interface Props {
