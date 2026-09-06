@@ -9,17 +9,26 @@ const pad = (n: number) => String(n).padStart(3, '0')
 const SHOT_COUNT = 12
 const SCENES = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-shots/${pad(i + 1)}.jpg`)
 
-/** 按索引放到一个近乎正交的椭圆轨道：轻微错相位让上下不压，
- *  但绝不再用小半径/大偏移把某张抛出环外。 */
-const RING = SCENES.map((src, i) => {
-  const angle = (Math.PI * 2 * i) / SHOT_COUNT
-  const ph = (i % 2 === 0 ? 0 : (Math.PI * 2) / (SHOT_COUNT * 2))
-  return {
-    src,
-    angle: angle + ph,
-    tilt: (i % 2 === 0 ? -1 : 1) * (1 + (i % 3)) * 0.9,
-  }
-})
+/**
+ * 「随手贴满一张照片墙」版式：不再排成等距环，避免两两对称/照片都被压小。
+ * 每张中心坐标与尺寸都错开（确定性摆几张，不是每次刷新都乱跳），
+ * 12 张尽量把四周塞满、露出浓烈的生活拼贴感，中心只留给一行文案+按钮。
+ * left/top 用 % 定位父容器；size 直接按父宽取更接近中等的缩放。
+ */
+const TILES: Array<{ top: number; left: number; size: number; rot: number }> = [
+  { top: 11, left: 2, size: 19, rot: -6 },
+  { top: 2, left: 24, size: 15, rot: 4 },
+  { top: 14, left: 42, size: 18, rot: -2 },
+  { top: 3, left: 64, size: 20, rot: 6 },
+  { top: 5, left: 84, size: 13, rot: -4 },
+  { top: 29, left: 81, size: 17, rot: 2 },
+  { top: 44, left: 1, size: 22, rot: 4 },
+  { top: 63, left: 42, size: 16, rot: -3 },
+  { top: 77, left: 4, size: 18, rot: -8 },
+  { top: 79, left: 25, size: 13, rot: 7 },
+  { top: 3, left: 6, size: 12, rot: 3 },
+  { top: 74, left: 63, size: 18, rot: -5 },
+]
 
 interface Props {
   /** 用户在场景幕点“开始”后唤醒轮播 */
@@ -39,37 +48,31 @@ export default function PhotoIntroStage({ onBegin }: Props) {
         className="relative mx-auto w-full max-w-[1000px]"
         style={{ height: 'clamp(440px, 72vh, 660px)' }}
       >
-        {/* --- 外圈环绕一圈、等比且位置确定清晰的场景照片 --- */}
-        {RING.map((shot, i) => {
-          const r = 46 // 圆心到照片中心的整圈半径（%）
-          return (
-            <motion.figure
-              key={shot.src}
-              className="pointer-events-none absolute overflow-hidden rounded-[clamp(6px,1vw,14px)] border border-white/90 bg-white p-[1.5%] shadow-[0_10px_22px_rgba(98,66,32,0.14)]"
-              style={{
-                left: `${50 + Math.cos(shot.angle) * r}%`,
-                top: `${50 + Math.sin(shot.angle) * r}%`,
-                width: '15.5%',
-                aspectRatio: '4 / 3',
-                rotate: `${shot.tilt}deg`,
-                transform: 'translate(-50%, -50%)',
-                zIndex: i === 0 ? 4 : i % 2 ? 2 : 3,
-              }}
-              initial={{ opacity: 0, scale: 0.7 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: shot.angle / (Math.PI * 2) * 0.5, type: 'spring', stiffness: 150, damping: 18 }}
-            >
-              {/* contain：永远保持原比例，不在框内被裁掉 */}
-              <img
-                src={shot.src}
-                alt=""
-                loading="lazy"
-                draggable={false}
-                className="h-full w-full object-contain bg-[#fdf6e7]"
-              />
-            </motion.figure>
-          )
-        })}
+        {/* --- 随手贴满的外圈“快门墙”：等比自然满幅，不等于同样大小/配对 --- */}
+        {TILES.map((tile, i) => (
+          <motion.figure
+            key={SCENES[i]}
+            className="pointer-events-none absolute overflow-hidden rounded-xl border border-white/90 bg-white shadow-[0_12px_26px_rgba(100,70,30,0.16)]"
+            style={{
+              left: `${tile.left}%`,
+              top: `${tile.top}%`,
+              width: `${tile.size}%`,
+              rotate: `${tile.rot}deg`,
+            }}
+            initial={{ opacity: 0, scale: 0.6 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: 0.14 + (i % TILES.length) * 0.045, type: 'spring', stiffness: 150, damping: 17 }}
+          >
+            {/* contain：保留照片本来的比例，容器内不裁、不改形 */}
+            <img
+              src={SCENES[i]}
+              alt=""
+              loading="lazy"
+              draggable={false}
+              className="h-auto max-h-[420px] w-full object-contain"
+            />
+          </motion.figure>
+        ))}
 
         {/* --- 中央只放轻量文案 + 开始按钮；不再用白色实底卡片压住中央照片，
              改成极浅磨砂文字区，让外圈作品能透过半透明区域自然透出 --- */}

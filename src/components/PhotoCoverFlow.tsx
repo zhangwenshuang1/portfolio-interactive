@@ -67,12 +67,9 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
 
   return (
     <div className={className}>
-        <div
-          className="relative select-none overflow-hidden"
-          style={{ height: CARD_H + 16 }}
-          onMouseEnter={() => setPaused(true)}
-          onMouseLeave={() => setPaused(false)}
-      >
+        {/* 舞台本身不监听悬停：若在“点击开始后鼠标留在原地”也算暂停，画幅永远不动。
+            此处于鼠标移入舞台的空白边缘也得让轮播继续。 */}
+        <div className="relative select-none overflow-hidden" style={{ height: CARD_H + 16 }}>
         {/* 米白衬底：暖色底板把整行作品框起来，大页面上不显得空（仿首页拼图那块米白底） */}
         <div
           aria-hidden
