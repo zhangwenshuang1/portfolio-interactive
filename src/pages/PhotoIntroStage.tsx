@@ -22,21 +22,20 @@ const SCENES = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-shots/${pad(
  *  相框里用 object-contain 保留照片本身比例（不裁切），相框外留白由白色纸片填充。
  */
 const TILES: Array<{ top: number; left: number; size: number; rot: number }> = [
-  // —— 顶部条带：整宽散布（下方文案区垂直居中，顶部 0–13% 不会被文字盖到）——
-  { top: 2, left: 3, size: 11, rot: -6 },
-  { top: 1.5, left: 18, size: 8, rot: 3 },
-  { top: 2, left: 34, size: 9, rot: -2 },
-  { top: 1, left: 48, size: 8, rot: 4 },
-  { top: 2, left: 62, size: 9, rot: -3 },
-  { top: 1.5, left: 76, size: 8, rot: 5 },
-  { top: 2, left: 89, size: 8, rot: -6 },
-  // —— 中部只摆在左右两端（保证中央按钮区干净）——
-  { top: 33, left: 1, size: 12, rot: 4 },
-  { top: 58, left: 1, size: 11, rot: -5 },
-  { top: 33, left: 86, size: 12, rot: -4 },
-  { top: 58, left: 86, size: 11, rot: 5 },
-  // —— 底部条带：整宽稀疏散布，进一步填满又不压内容区 ——
-  { top: 80, left: 46, size: 9, rot: 3 },
+  // —— 上排：整宽稀疏散布，形成一条不规则的“地平线”带，照片主体都落在文字区上方 ——
+  { top: 4, left: 2, size: 11, rot: -6 },
+  { top: 10, left: 15, size: 9, rot: 4 },
+  { top: 3, left: 27, size: 12, rot: 2 },
+  { top: 11, left: 41, size: 8, rot: -3 },
+  { top: 3, left: 52, size: 11, rot: 5 },
+  { top: 9, left: 65, size: 9, rot: -4 },
+  { top: 3, left: 77, size: 12, rot: 3 },
+  { top: 9, left: 90, size: 8, rot: -5 },
+  // —— 中排：只放左右两端，绝不进入中间文字/按钮的活动带 ——
+  { top: 33, left: 1, size: 6, rot: 2 },
+  { top: 60, left: 1, size: 6, rot: -3 },
+  { top: 33, left: 93, size: 6, rot: -2 },
+  { top: 60, left: 93, size: 6, rot: 3 },
 ]
 
 interface Props {
@@ -61,22 +60,22 @@ export default function PhotoIntroStage({ onBegin }: Props) {
         {TILES.map((tile, i) => (
           <motion.figure
             key={SCENES[i]}
-            className="pointer-events-none absolute overflow-hidden rounded-lg bg-[#fffdf7] shadow-[0_10px_22px_rgba(100,70,30,0.18)]"
+            className="pointer-events-none absolute aspect-[4/3] w-auto overflow-hidden rounded-lg bg-[#fffdf7] shadow-[0_10px_22px_rgba(100,70,30,0.18)]"
             style={{
-              // 相框左右撑满 tile.size%，再配一个 4:3 白边比例，让占位高度完全可算
+              // 相框宽度撑满 tile.size%，再用固定 4:3 白边比例（写在 class 里，保证生效），
+              // 让占位高度完全可算 → 彼此不会因竖图原生高度互相压、也不溢出。
               left: `${tile.left}%`,
               top: `${tile.top}%`,
               width: `${tile.size}%`,
-              aspectRatio: '4 / 3',
               rotate: `${tile.rot}deg`,
-              padding: '2.8%',
+              padding: '3%',
               boxSizing: 'border-box',
             }}
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15 + (i % TILES.length) * 0.05, type: 'spring', stiffness: 160, damping: 18 }}
           >
-            {/* contain：照片在白色护边内等比缩放到最大，居中、不外裁、不改形 */}
+            {/* contain：照片等比缩放到白边内最大，居中、不外裁、不改形 */}
             <img
               src={SCENES[i]}
               alt=""
