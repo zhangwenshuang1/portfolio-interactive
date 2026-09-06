@@ -4,7 +4,8 @@ import { motion } from 'framer-motion'
 // 不添加随机径向/随机的混乱位置。鼠标始终不会把它们当作按钮，仅作取景展示。
 // （素材为 public/intro-shots/001…012.jpg，即使布局照片比例不同也按原比例留白展示。）
 
-const pad = (n: number) => String(n).padStart(2, '0')
+// 编号统一补到 3 位：文件就是 intro-shots/001.jpg … 012.jpg，少一位会全 404
+const pad = (n: number) => String(n).padStart(3, '0')
 const SHOT_COUNT = 12
 const SCENES = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-shots/${pad(i + 1)}.jpg`)
 
