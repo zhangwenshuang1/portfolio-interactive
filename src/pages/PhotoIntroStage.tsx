@@ -10,24 +10,33 @@ const SHOT_COUNT = 12
 const SCENES = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-shots/${pad(i + 1)}.jpg`)
 
 /**
- * 「随手贴满一张照片墙」版式：不再排成等距环，避免两两对称/照片都被压小。
- * 每张中心坐标与尺寸都错开（确定性摆几张，不是每次刷新都乱跳），
- * 12 张尽量把四周塞满、露出浓烈的生活拼贴感，中心只留给一行文案+按钮。
- * left/top 用 % 定位父容器；size 直接按父宽取更接近中等的缩放。
+ * 设计为「等焦点的若干排片墙」——不是一个等距圆环（那样两两成对、偏小），
+ * 也不是纯随机撒点（那样会互相压、或挡中央按钮）。
+ *
+ * 约束（本阶段重点修好的几何安全性）：
+ *  1. 每张照片都是一个「有确定宽高比的相片框」（aspectRatio 固定），不是靠
+ *     bare <img> 的原生高度撑页面——这样无论横图/竖图，占位都精确可控、彼此不叠。
+ *  2. 中央保护带（文章区/按钮，约在横向 34–66%）永远留空：
+ *     每张相框中心都落在四个角落带里，且宽度 ≤ 15%，即使旋转也在保护带外。
+ *  3. 只做很轻的随机旋转（-9..9°），仍然是“随手贴”浓度，但绝不压中间的文案。
+ *  相框里用 object-contain 保留照片本身比例（不裁切），相框外留白由白色纸片填充。
  */
 const TILES: Array<{ top: number; left: number; size: number; rot: number }> = [
-  { top: 11, left: 2, size: 19, rot: -6 },
-  { top: 2, left: 24, size: 15, rot: 4 },
-  { top: 14, left: 42, size: 18, rot: -2 },
-  { top: 3, left: 64, size: 20, rot: 6 },
-  { top: 5, left: 84, size: 13, rot: -4 },
-  { top: 29, left: 81, size: 17, rot: 2 },
-  { top: 44, left: 1, size: 22, rot: 4 },
-  { top: 63, left: 42, size: 16, rot: -3 },
-  { top: 77, left: 4, size: 18, rot: -8 },
-  { top: 79, left: 25, size: 13, rot: 7 },
-  { top: 3, left: 6, size: 12, rot: 3 },
-  { top: 74, left: 63, size: 18, rot: -5 },
+  // —— 顶部条带：整宽散布（下方文案区垂直居中，顶部 0–13% 不会被文字盖到）——
+  { top: 2, left: 3, size: 11, rot: -6 },
+  { top: 1.5, left: 18, size: 8, rot: 3 },
+  { top: 2, left: 34, size: 9, rot: -2 },
+  { top: 1, left: 48, size: 8, rot: 4 },
+  { top: 2, left: 62, size: 9, rot: -3 },
+  { top: 1.5, left: 76, size: 8, rot: 5 },
+  { top: 2, left: 89, size: 8, rot: -6 },
+  // —— 中部只摆在左右两端（保证中央按钮区干净）——
+  { top: 33, left: 1, size: 12, rot: 4 },
+  { top: 58, left: 1, size: 11, rot: -5 },
+  { top: 33, left: 86, size: 12, rot: -4 },
+  { top: 58, left: 86, size: 11, rot: 5 },
+  // —— 底部条带：整宽稀疏散布，进一步填满又不压内容区 ——
+  { top: 80, left: 46, size: 9, rot: 3 },
 ]
 
 interface Props {
@@ -52,24 +61,28 @@ export default function PhotoIntroStage({ onBegin }: Props) {
         {TILES.map((tile, i) => (
           <motion.figure
             key={SCENES[i]}
-            className="pointer-events-none absolute overflow-hidden rounded-xl border border-white/90 bg-white shadow-[0_12px_26px_rgba(100,70,30,0.16)]"
+            className="pointer-events-none absolute overflow-hidden rounded-lg bg-[#fffdf7] shadow-[0_10px_22px_rgba(100,70,30,0.18)]"
             style={{
+              // 相框左右撑满 tile.size%，再配一个 4:3 白边比例，让占位高度完全可算
               left: `${tile.left}%`,
               top: `${tile.top}%`,
               width: `${tile.size}%`,
+              aspectRatio: '4 / 3',
               rotate: `${tile.rot}deg`,
+              padding: '2.8%',
+              boxSizing: 'border-box',
             }}
-            initial={{ opacity: 0, scale: 0.6 }}
+            initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.14 + (i % TILES.length) * 0.045, type: 'spring', stiffness: 150, damping: 17 }}
+            transition={{ delay: 0.15 + (i % TILES.length) * 0.05, type: 'spring', stiffness: 160, damping: 18 }}
           >
-            {/* contain：保留照片本来的比例，容器内不裁、不改形 */}
+            {/* contain：照片在白色护边内等比缩放到最大，居中、不外裁、不改形 */}
             <img
               src={SCENES[i]}
               alt=""
               loading="lazy"
               draggable={false}
-              className="h-auto max-h-[420px] w-full object-contain"
+              className="h-full w-full rounded-sm object-contain"
             />
           </motion.figure>
         ))}
