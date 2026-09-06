@@ -79,32 +79,41 @@ export default function PhotoIntroStage({ onBegin }: Props) {
           </motion.div>
         ))}
 
-        {/* --- 中心只放文案 + 开始按钮（照片全在外圈，不会互相遮挡） --- */}
-        <div className="pointer-events-none absolute left-1/2 top-1/2 w-[min(70%,420px)] -translate-x-1/2 -translate-y-1/2">
+        {/* --- 中央只放轻量文案 + 开始按钮；不再用白色实底卡片压住中央照片，
+             改成极浅磨砂文字区，让外圈作品能透过半透明区域自然透出 --- */}
+        <div
+          className="pointer-events-none absolute left-1/2 top-1/2 w-[clamp(300px,60%,560px)] -translate-x-1/2 -translate-y-1/2"
+        >
           <motion.div
-            initial={{ opacity: 0, scale: 0.9, y: 14 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: 0.45, duration: 0.55, ease: 'easeOut' }}
-            className="pointer-events-auto rounded-[30px] border border-white/70 bg-[rgba(255,252,245,0.82)] px-6 py-7 text-center shadow-[0_24px_70px_rgba(120,80,25,0.2)] backdrop-blur-[10px] sm:px-8"
+            initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
+            animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+            transition={{ delay: 0.5, duration: 0.6, ease: 'easeOut' }}
+            className="flex flex-col items-center gap-4 text-center"
           >
-            <p className="text-[10px] font-black uppercase tracking-[0.34em] text-[#b97f47]">
+            {/* 微型眉题：半透明白细胶囊，几乎不遮图 */}
+            <span className="rounded-full bg-[rgba(255,252,245,0.5)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
               拿起相机的每一刻
-            </p>
-            <h2 className="mt-2 text-2xl font-black leading-snug text-[#2c241a] sm:text-[30px]">
-              摄影，是我在平凡缝隙里捕捉光的方式。
+            </span>
+
+            {/* 主文案：不用不透明底板，用深色文字 + 柔黑影保证在照片上可读 */}
+            <h2 className="max-w-[460px] text-[clamp(17px,3.6vw,26px)] font-black leading-snug text-[#241c10] [filter:drop-shadow(0_2px_10px_rgba(255,248,238,0.9))]">
+              摄影，是我在平凡缝隙里捕捉光的方式
             </h2>
-            <p className="mt-2 text-sm font-medium leading-6 text-[#6a5842]">
-              走到景深处，每一张快门，都是我想让世界慢下来的心意。
+            <p className="max-w-[400px] text-[13px] font-semibold leading-6 text-[#3b2f1e] [filter:drop-shadow(0_1px_6px_rgba(255,250,242,0.9))]">
+              走到景深处，让快门替万物放慢。
             </p>
+
+            {/* CTA：仍旧醒目，但用更小胶囊体积，四周留出空气不遮满 */}
             <button
               onClick={onBegin}
-              className="group mt-5 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff7eb6] to-[#f3c15f] px-6 py-3 text-[15px] font-black text-white shadow-[0_14px_26px_rgba(255,99,164,0.42)] transition hover:scale-[1.05] focus:outline-none focus:ring-4 focus:ring-[#ff9fc6]/55 active:scale-95"
+              className="pointer-events-auto group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff7eb6]/92 to-[#f3c15f]/92 px-5 py-2.5 text-[14px] font-black text-white shadow-[0_12px_24px_rgba(120,60,30,0.2)] ring-2 ring-white/70 backdrop-blur-[4px] transition hover:scale-[1.05] focus:outline-none focus:ring-4 focus:ring-[#ff9fc6]/55 active:scale-95"
             >
-              开始浏览我的摄影作品
+              开始浏览摄影作品
               <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
             </button>
-            <p className="mt-4 text-[11px] font-semibold text-[#b09a80]">
-              25 张作品 · 自动无缝循环 · 鼠标悬停画面即可暂停
+
+            <p className="text-[11px] font-semibold text-[#4c3f2a] [filter:drop-shadow(0_1px_4px_rgba(255,249,241,0.95))]">
+              25 张作品 · 无缝循环 · 悬停即可暂停
             </p>
           </motion.div>
         </div>
