@@ -102,6 +102,8 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
             const far = Math.abs(rel)
             const visible = far <= 4
             const active = rel === 0
+            // 高层级在前：中央 1 · 紧邻 0.85 · 稍远 0.6 · 其余淡出不参与
+            const opac = far === 0 ? 1 : far === 1 ? 0.85 : far === 2 ? 0.6 : 0
             return (
               <motion.div
                 key={photo.src}
@@ -111,7 +113,7 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
                 animate={{
                   x: 0,
                   scale: active ? 1 : 0.62,
-                  opacity: visible ? (far === 1 ? 0.85 : 0.5) : 0,
+                  opacity: visible ? opac : 0,
                   filter: active ? 'saturate(1.06) brightness(1.02)' : 'saturate(0.85) brightness(0.9)',
                 }}
                 transition={{ type: 'spring', stiffness: 180, damping: 24 }}
