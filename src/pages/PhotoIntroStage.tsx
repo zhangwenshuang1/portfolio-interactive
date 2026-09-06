@@ -1,45 +1,22 @@
 import { motion } from 'framer-motion'
 
-// 场景幕：展示「我拍照/举起相机」的现场照片，沿外圈松散环绕中央文案；
-// 不是标准等距圆，径向与相位有轻微差异——像随手贴起的宝丽来，让人感觉自然。
-// 里圈素材单独放在 public/intro-shots，由「拍照」目录整理而来。
+// 场景幕：12 张「我举起相机/现场」照片，按自身比例、等距沿一个外圈环绕中央按钮，
+// 不添加随机径向/随机的混乱位置。鼠标始终不会把它们当作按钮，仅作取景展示。
+// （素材为 public/intro-shots/001…012.jpg，即使布局照片比例不同也按原比例留白展示。）
 
 const pad = (n: number) => String(n).padStart(2, '0')
 const SHOT_COUNT = 12
 const SCENES = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-shots/${pad(i + 1)}.jpg`)
-const N = SCENES.length
 
-const PRE_ANGLES = [
-  0,
-  Math.PI * 0.47,
-  Math.PI * 0.91,
-  Math.PI * 1.38,
-  Math.PI * 1.86,
-  Math.PI * 2.23,
-  Math.PI * 2.7,
-  Math.PI * 3.12,
-  Math.PI * 3.61,
-  Math.PI * 4.03,
-  Math.PI * 4.49,
-  Math.PI * 4.96,
-  Math.PI * 5.41,
-  Math.PI * 5.9,
-].map((x) => x - Math.PI / 2)
-
-// 每条随机化径向权重与相位，把“正圆/标准椭圆”打散成自然散布
+/** 按索引放到一个近乎正交的椭圆轨道：轻微错相位让上下不压，
+ *  但绝不再用小半径/大偏移把某张抛出环外。 */
 const RING = SCENES.map((src, i) => {
-  const seed = (i % 3) / 3 // 0 ~ 0.66 做轻微错开
-  const a = PRE_ANGLES[i % PRE_ANGLES.length] + seed * 0.16
-  // 径向不是同一个半径：第 i 张在 0%~44% 范围内来回深浅
-  const radial = 0.5 + 0.2 * ((i * 7 + 3) % 5)
-  const rx = 46 * radial
-  const ry = rx * (i % 2 ? 1.32 : 1)
+  const angle = (Math.PI * 2 * i) / SHOT_COUNT
+  const ph = (i % 2 === 0 ? 0 : (Math.PI * 2) / (SHOT_COUNT * 2))
   return {
     src,
-    x: 50 + Math.cos(a) * (rx / 1.05 + (i % 4 === 0 ? 6 : i % 4 === 2 ? -5 : 0)),
-    y: 50 + Math.sin(a) * (ry / 1.95 + (i % 3 === 0 ? 7 : i % 3 === 2 ? -4 : 0)),
-    r: -14 + i * (30 / N),
-    dy: 0.32 + i * 0.055,
+    angle: angle + ph,
+    tilt: (i % 2 === 0 ? -1 : 1) * (1 + (i % 3)) * 0.9,
   }
 })
 
@@ -61,32 +38,37 @@ export default function PhotoIntroStage({ onBegin }: Props) {
         className="relative mx-auto w-full max-w-[1000px]"
         style={{ height: 'clamp(440px, 72vh, 660px)' }}
       >
-        {/* --- 外圈环绕一圈的场景照片 --- */}
-        {RING.map((it, i) => (
-          <motion.div
-            key={it.src}
-            className="pointer-events-none absolute overflow-hidden rounded-[clamp(8px,1.4vw,18px)] border-2 border-white/95 bg-white/80 shadow-[0_12px_28px_rgba(98,66,32,0.2)]"
-            style={{
-              left: `${it.x - 8.5}%`,
-              top: `${it.y - 5.6}%`,
-              width: '17%',
-              aspectRatio: '4 / 3', // 取景框，内部 contain 完整保留整张画面
-              rotate: `${it.r}deg`,
-              zIndex: i % 3 === 0 ? 3 : i % 3 === 1 ? 2 : 1,
-            }}
-            initial={{ opacity: 0, scale: 0.55, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ delay: it.dy, type: 'spring', stiffness: 130, damping: 17 }}
-          >
-            <img
-              src={it.src}
-              alt=""
-              loading="lazy"
-              draggable={false}
-              className="h-full w-full object-cover"
-            />
-          </motion.div>
-        ))}
+        {/* --- 外圈环绕一圈、等比且位置确定清晰的场景照片 --- */}
+        {RING.map((shot, i) => {
+          const r = 46 // 圆心到照片中心的整圈半径（%）
+          return (
+            <motion.figure
+              key={shot.src}
+              className="pointer-events-none absolute overflow-hidden rounded-[clamp(6px,1vw,14px)] border border-white/90 bg-white p-[1.5%] shadow-[0_10px_22px_rgba(98,66,32,0.14)]"
+              style={{
+                left: `${50 + Math.cos(shot.angle) * r}%`,
+                top: `${50 + Math.sin(shot.angle) * r}%`,
+                width: '15.5%',
+                aspectRatio: '4 / 3',
+                rotate: `${shot.tilt}deg`,
+                transform: 'translate(-50%, -50%)',
+                zIndex: i === 0 ? 4 : i % 2 ? 2 : 3,
+              }}
+              initial={{ opacity: 0, scale: 0.7 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: shot.angle / (Math.PI * 2) * 0.5, type: 'spring', stiffness: 150, damping: 18 }}
+            >
+              {/* contain：永远保持原比例，不在框内被裁掉 */}
+              <img
+                src={shot.src}
+                alt=""
+                loading="lazy"
+                draggable={false}
+                className="h-full w-full object-contain bg-[#fdf6e7]"
+              />
+            </motion.figure>
+          )
+        })}
 
         {/* --- 中央只放轻量文案 + 开始按钮；不再用白色实底卡片压住中央照片，
              改成极浅磨砂文字区，让外圈作品能透过半透明区域自然透出 --- */}

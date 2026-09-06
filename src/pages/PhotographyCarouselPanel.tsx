@@ -4,7 +4,6 @@ import type { Puzzle } from '../types'
 import { usePuzzleStore } from '../store/puzzleStore'
 import PhotoCoverFlow from '../components/PhotoCoverFlow'
 import PhotoIntroStage from './PhotoIntroStage'
-import { ROLL_SIZE } from '../lib/photoRoll'
 
 interface PanelProps {
   puzzle: Puzzle
@@ -77,7 +76,7 @@ export default function PhotographyCarouselPanel({ puzzle, onClose }: PanelProps
               <PhotoCoverFlow />
             </motion.div>
             <p className="mt-4 text-center text-xs font-semibold text-gray-400">
-              鼠标移开画面即自动继续，看完 {ROLL_SIZE} 张会从头再循环一遍
+              鼠标移开画面即自动继续 · 也可按键盘的 ‹ / › 手动切换
             </p>
           </div>
         ) : (

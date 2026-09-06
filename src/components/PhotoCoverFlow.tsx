@@ -55,6 +55,16 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
     return () => window.clearTimeout(t)
   }, [current, paused, next])
 
+  // 也响应键盘左右键，方便只用方向键手动播放/切换
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowLeft') prev()
+      else if (e.key === 'ArrowRight') next()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [prev, next])
+
   return (
     <div className={className}>
         <div
