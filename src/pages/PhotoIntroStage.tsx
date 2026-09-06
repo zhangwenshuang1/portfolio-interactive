@@ -22,21 +22,21 @@ const SCENES = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-shots/${pad(
  *  相框里用 object-contain 保留照片本身比例（不裁切），相框外留白由白色纸片填充。
  */
 const TILES: Array<{ top: number; left: number; size: number; rot: number }> = [
-  // —— 顶部条带（高一点，不遮中央文字）——
-  { top: 3, left: 5, size: 12, rot: -6 },
-  { top: 6, left: 24, size: 9, rot: 4 },
-  { top: 2, left: 40, size: 12, rot: -2 },
-  { top: 6, left: 57, size: 9, rot: 5 },
-  { top: 3, left: 73, size: 11, rot: -4 },
-  { top: 6, left: 88, size: 9, rot: 3 },
-  // —— 两侧中段竖铺（靠近左右外边，不碰 CTA）——
-  { top: 24, left: 2, size: 12, rot: 3 },
-  { top: 42, left: 2, size: 12, rot: -4 },
-  { top: 24, left: 86, size: 12, rot: -3 },
-  { top: 42, left: 86, size: 12, rot: 4 },
-  // —— 底部条带（宽松且集中在左右与中央偏外的空隙）——
-  { top: 62, left: 8, size: 12, rot: 2 },
-  { top: 62, left: 80, size: 12, rot: -2 },
+  // —— 上条带（这几张放大成主视觉，横排错峰——不要两两一样高）——
+  { top: 3, left: 2, size: 18, rot: -6 },
+  { top: 7, left: 20, size: 13, rot: 4 },
+  { top: 2, left: 35, size: 18, rot: 2 },
+  { top: 8, left: 52, size: 13, rot: -3 },
+  { top: 3, left: 68, size: 18, rot: 5 },
+  { top: 7, left: 85, size: 13, rot: -4 },
+  // —— 左 / 右长条竖排（贴外边，放大；口播正下方留出）——
+  { top: 26, left: 2, size: 13, rot: 3 },
+  { top: 45, left: 2, size: 13, rot: -4 },
+  { top: 26, left: 85, size: 13, rot: -3 },
+  { top: 45, left: 85, size: 13, rot: 4 },
+  // —— 底部两格（画布加高后用剩出来的下排，依旧远离 CTA）——
+  { top: 66, left: 12, size: 16, rot: 2 },
+  { top: 66, left: 72, size: 16, rot: -2 },
 ]
 
 interface Props {
@@ -55,7 +55,7 @@ export default function PhotoIntroStage({ onBegin }: Props) {
     >
       <div
         className="relative mx-auto w-full max-w-[1000px]"
-        style={{ height: 'clamp(440px, 72vh, 660px)' }}
+        style={{ height: 'clamp(620px, 86vh, 920px)' }}
       >
         {/* --- 随手贴满的外圈“快门墙”：等比自然满幅，不等于同样大小/配对 --- */}
         {TILES.map((tile, i) => (
