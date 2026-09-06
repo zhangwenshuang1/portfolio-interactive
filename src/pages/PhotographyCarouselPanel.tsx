@@ -11,9 +11,9 @@ interface PanelProps {
 }
 
 /**
- * 摄影拼图的详情面板。
- * 分两幕：先展示“拍照现场”的场景幕（散乱浮现），点开始进入轮播。
- * 轮播以封面流浏览全部 24 张作品：每 0.5s 循环、鼠标悬停可暂停。
+ * 摄影拼图的详情面板，分两幕：
+ * 1) 场景幕：左半边完整铺开(不裁剪)“拍照现场”幕后照，右半边集中介绍+开始按钮；文字不遮挡照片。
+ * 2) 进入后为封面流环形轮播，浏览全部 25 张作品：每 1s 自动前进、无缝循环、鼠标悬停可暂停。
  */
 export default function PhotographyCarouselPanel({ puzzle, onClose }: PanelProps) {
   const markPuzzleAsRead = usePuzzleStore((s) => s.markPuzzleAsRead)
@@ -76,7 +76,7 @@ export default function PhotographyCarouselPanel({ puzzle, onClose }: PanelProps
               <PhotoCoverFlow />
             </motion.div>
             <p className="mt-4 text-center text-xs font-semibold text-gray-400">
-              鼠标移开画面即自动继续，看完 24 张会从头再循环一遍
+              鼠标移开画面即自动继续，看完 25 张会从头再循环一遍
             </p>
           </div>
         ) : (
