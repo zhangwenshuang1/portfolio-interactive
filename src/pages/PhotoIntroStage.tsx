@@ -61,28 +61,26 @@ export default function PhotoIntroStage({ onBegin }: Props) {
         {TILES.map((tile, i) => (
           <motion.figure
             key={SCENES[i]}
-            className="pointer-events-none absolute aspect-[4/3] w-auto overflow-hidden rounded-lg bg-[#fffdf7] shadow-[0_10px_22px_rgba(100,70,30,0.18)]"
+            className="pointer-events-none absolute aspect-[4/3] w-auto overflow-hidden rounded-xl shadow-[0_10px_22px_rgba(100,70,30,0.14)]"
             style={{
-              // 相框宽度撑满 tile.size%，再用固定 4:3 白边比例（写在 class 里，保证生效），
-              // 让占位高度完全可算 → 彼此不会因竖图原生高度互相压、也不溢出。
+              // 贴纸面积 = 照片本身 → 不再有白纸相框占走尺寸，图片铺满整块
+              // （裁剪少量边缘换取“贴纸即照片”，可见度最大；4:3 宽高比写进 class 才能生效）。
               left: `${tile.left}%`,
               top: `${tile.top}%`,
               width: `${tile.size}%`,
               rotate: `${tile.rot}deg`,
-              padding: '3%',
-              boxSizing: 'border-box',
             }}
             initial={{ opacity: 0, scale: 0.7 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ delay: 0.15 + (i % TILES.length) * 0.05, type: 'spring', stiffness: 160, damping: 18 }}
           >
-            {/* contain：照片等比缩放到白边内最大，居中、不外裁、不改形 */}
+            {/* cover：照片铺满整个贴纸，边缘做极轻裁切换取最大可视面积，无白框 */}
             <img
               src={SCENES[i]}
               alt=""
               loading="lazy"
               draggable={false}
-              className="h-full w-full rounded-sm object-contain"
+              className="h-full w-full scale-[1.01] rounded-xl object-cover"
             />
           </motion.figure>
         ))}
