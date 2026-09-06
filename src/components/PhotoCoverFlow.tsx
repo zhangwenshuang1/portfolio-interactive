@@ -55,8 +55,6 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
     return () => window.clearTimeout(t)
   }, [current, paused, next])
 
-  const deco = (num: number) => (num % 4 === 0 ? '照片分享' : '')
-
   return (
     <div className={className}>
         <div
@@ -126,14 +124,8 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
                   draggable={false}
                   className="h-full w-full object-cover"
                 />
-                {/* 轻微暗脚，区分前景 */}
+                {/* 轻微暗脚，区分前景（数字角标已按需求移除，只留小点） */}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent opacity-80" />
-                {active && (
-                  <span className="pointer-events-none absolute left-3 top-3 flex items-baseline gap-1.5 rounded-full bg-white/90 px-3 py-1 text-sm font-black text-gray-800 shadow-[0_8px_20px_rgba(255,80,160,0.4)] ring-2 ring-[#ff7eb6]/40">
-                    {id}
-                    <span className="text-[11px] font-extrabold text-gray-400">/ {COUNT}</span>
-                  </span>
-                )}
               </div>
             </motion.div>
           )
@@ -156,8 +148,8 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
         </button>
       </div>
 
-      {/* 指示小点（24 个位置略�挤，用紧凑小点并允许换行） */}
-      <div className="mt-4 flex flex-col items-center gap-2">
+      {/* 指示小点（只保留小点，不要“第几张/共几张”数字） */}
+      <div className="mt-4 flex items-center justify-center">
         <div
           className="flex max-w-[560px] flex-wrap items-center justify-center gap-x-1.5 gap-y-2"
           onMouseEnter={() => setPaused(true)}
@@ -175,14 +167,6 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
               }}
             />
           ))}
-        </div>
-
-        <div className="flex items-baseline gap-2 text-gray-600">
-          <span className="font-mono text-base font-black text-gray-700">
-            {String(current + 1).padStart(2, '0')}
-          </span>
-          <span className="text-xs font-bold opacity-60">/ {String(COUNT).padStart(2, '0')}</span>
-          <span className="ml-3 text-xs text-gray-400">{deco(current + 1)}</span>
         </div>
       </div>
     </div>

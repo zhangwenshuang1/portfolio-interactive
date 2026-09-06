@@ -1,13 +1,13 @@
 import { motion } from 'framer-motion'
-import { ROLL_SIZE, rollAt } from '../lib/photoRoll'
 
-// 场景幕：把整本摄影作品沿外圈散开环绕中央文案，
-// 中央留空给「定位 + 开始按钮」——照片不是等距站成整齐圆圈，
-// 而是带着长度/角度微妙差异的松散绕圈，像随手贴在光屏边上的宝丽来。
+// 场景幕：展示「我拍照/举起相机」的现场照片，沿外圈松散环绕中央文案；
+// 不是标准等距圆，径向与相位有轻微差异——像随手贴起的宝丽来，让人感觉自然。
+// 里圈素材单独放在 public/intro-shots，由「拍照」目录整理而来。
 
-// 由实际作品总数生成外圈照片：001.jpg 起，order 即文件排序
-const N = Math.min(ROLL_SIZE, 14) // 环绕区域能舒服容纳的数量
-const SCENES = Array.from({ length: N }, (_, i) => rollAt(i + 1))
+const pad = (n: number) => String(n).padStart(2, '0')
+const SHOT_COUNT = 12
+const SCENES = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-shots/${pad(i + 1)}.jpg`)
+const N = SCENES.length
 
 const PRE_ANGLES = [
   0,
@@ -122,7 +122,7 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             </button>
 
             <p className="text-[11px] font-semibold text-[#4c3f2a] [filter:drop-shadow(0_1px_4px_rgba(255,249,241,0.95))]">
-              {ROLL_SIZE} 幅作品 · 无缝循环 · 悬停即可暂停
+              轻点按钮，逐张翻阅我的取景与按下快门的瞬间
             </p>
           </motion.div>
         </div>
