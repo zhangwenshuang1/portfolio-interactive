@@ -72,17 +72,14 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
         />
         {/* 环形作品台：当前位置左右各取几张，用 % 算出真正的“第 N+1 张”，
             因此中央永远是相册里挨着排序的下一张；第 25 张的右侧直接回落到第 1 张。 */}
-        {Array.from({ length: VIEW_W }, (_x, k) => {
+        {Array.from({ length: VIEW_W }, (_, k) => {
           const rel = k - Math.floor(VIEW_W / 2)
           const idx = (((current + rel) % COUNT) + COUNT) % COUNT
           const far = Math.abs(rel)
           const active = rel === 0
           // 主从表：中央 1:1 · 贴邻 .92 · 隔一张 .74 · 更远 .5/.34，最外淡出
           const scale = active ? 1 : far === 1 ? NEAR : far === 2 ? T2 : far === 3 ? T3 : T4
-          // 进场中央照比起旧图略大一点再落回 1，避免“硬贴”
-          const startScale = active ? 0.9 : scale * 0.94
-          const opac = active ? 0.55 : far === 1 ? 0.94 : far === 2 ? 0.82 : far === 3 ? 0.66 : 0.4
-          const startOpac = active ? 0.25 : opac * 0.5
+          const opac = active ? 1 : far === 1 ? 0.94 : far === 2 ? 0.82 : far === 3 ? 0.66 : 0.4
           const zidx = active ? 500 : far === 1 ? 2 : 0
           const f = (s: number, b: number) => `saturate(${s}) brightness(${b})`
           const filter = active
@@ -93,15 +90,15 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
             ? f(0.9, 0.95)
             : f(0.82, 0.92)
           const id = idx + 1
-          // slot 以位置为键保持常驻 → 轮换只在场内“呼吸/淡推”，不再整排瞬时重建
           return (
             <motion.div
-              key={`slot-${k}`}
+              key={id}
               className="absolute"
-              style={{ left: `calc(50% - ${CARD_W / 2}px + ${rel * STEP}px)`, top: 0 }}
-              initial={{ scale: startScale, opacity: startOpac, filter: f(1.02, 1.01) }}
+              // 让 rel=0 的那一张停在正中央
+              style={{ left: `calc(50% - ${CARD_W / 2}px + ${rel * STEP}px)`, top: (CARD_H - CARD_H) / 2 - 0 }}
+              initial={false}
               animate={{ scale, opacity: opac, zIndex: zidx, filter }}
-              transition={{ type: 'spring', stiffness: 130, damping: 24 }}
+              transition={{ type: 'spring', stiffness: 220, damping: 30 }}
             >
               <div
                 role="button"
@@ -122,17 +119,12 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
                     : '0 14px 30px rgba(30,20,45,0.16)',
                 }}
               >
-                {/* 中央入画：轻微推近 + 提亮，取代生硬的瞬间替换 */}
-                <motion.img
-                  key={id}
+                <img
                   src={`/photo-works/${pad(id)}.jpg`}
                   alt={`摄影作品 ${id}`}
-                  loading="eager"
+                  loading="lazy"
                   draggable={false}
                   className="h-full w-full object-cover"
-                  initial={active ? { scale: 1.05, filter: 'blur(4px) brightness(0.96)' } : false}
-                  animate={{ scale: active ? 1 : 1, filter: active ? 'blur(0px) brightness(1)' : 'none' }}
-                  transition={{ duration: active ? 0.4 : 0, ease: 'easeOut' }}
                 />
                 {/* 轻微暗脚，区分前景 */}
                 <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent opacity-80" />
