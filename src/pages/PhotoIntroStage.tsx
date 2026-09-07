@@ -1,42 +1,70 @@
 import { motion } from 'framer-motion'
 
-// 场景幕：12 张「我举起相机/现场」照片，按自身比例、等距沿一个外圈环绕中央按钮，
-// 不添加随机径向/随机的混乱位置。鼠标始终不会把它们当作按钮，仅作取景展示。
-// （素材为 public/intro-shots/001…012.jpg，即使布局照片比例不同也按原比例留白展示。）
+// ─────────────────────────────────────────────────────────────────────────────
+// 摄影「开场墙」：环绕中央文案，16:9 的可加高画布四边放 12 张随拍。
+//
+// 一个版本的既定目标：
+// 1) 「更大」而不再“小邮票” —— 每张照片尽量给足宽度；
+// 2) 「按原图比例、零裁剪」—— 外层不设 aspect/裁切，直接用 <img> 自身宽高比占位
+//    （w 由布局决定、h-auto），所见即这张原图全部内容；
+// 3) 「上下均衡、别只在上面挤一条」—— 布局把上、中柱、底排都撑开、密度分散；
+// 4) 「加载不卡」—— 只引用 intro-thumbs（每张 ~60–77KB 缩略，首屏总量 <1MB，而非
+//     原图的 10MB+ 原文件）。浏览器内的 60MB → 数千 % 提速。轮播大图与这批相互独立。
+//
+// 只要保证 central x∈[33..67]、y∈[27..59] 完全留空，中央徽章/标题/按钮永远可读。
+// ─────────────────────────────────────────────────────────────────────────────
 
-// 编号统一补到 3 位：文件就是 intro-shots/001.jpg … 012.jpg，少一位会全 404
 const pad = (n: number) => String(n).padStart(3, '0')
 const SHOT_COUNT = 12
-const SCENES = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-shots/${pad(i + 1)}.jpg`)
+const SHOTS = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-thumbs/${pad(i + 1)}.jpg`)
+
+/** 每张的原始像素尺寸（抓源头文件得到；仅用来转换 % 宽 - > 原比例高，不参与显示裁剪） */
+const NATIVE: Array<{ w: number; h: number }> = [
+  { w: 2133, h: 1600 }, // 001 横 3:2
+  { w: 1212, h: 810 }, //  002 横 3:2
+  { w: 1080, h: 1440 }, // 003 竖 3:4
+  { w: 3024, h: 4032 }, // 004 竖 3:4
+  { w: 3072, h: 4096 }, // 005 竖 3:4
+  { w: 6000, h: 4000 }, // 006 横 3:2
+  { w: 3024, h: 4032 }, // 007 竖 3:4
+  { w: 4032, h: 3024 }, // 008 横 4:3
+  { w: 5328, h: 4000 }, // 009 横 4:3
+  { w: 2268, h: 4032 }, // 010 竖 9:16（窄长）
+  { w: 2448, h: 3264 }, // 011 竖 3:4
+  { w: 4288, h: 2848 }, // 012 横 3:2
+]
 
 /**
- * 设计为「等焦点的若干排片墙」——不是一个等距圆环（那样两两成对、偏小），
- * 也不是纯随机撒点（那样会互相压、或挡中央按钮）。
- *
- * 约束（本阶段重点修好的几何安全性）：
- *  1. 每张照片都是一个「有确定宽高比的相片框」（aspectRatio 固定），不是靠
- *     bare <img> 的原生高度撑页面——这样无论横图/竖图，占位都精确可控、彼此不叠。
- *  2. 中央保护带（文章区/按钮，约在横向 34–66%）永远留空：
- *     每张相框中心都落在四个角落带里，且宽度 ≤ 15%，即使旋转也在保护带外。
- *  3. 只做很轻的随机旋转（-9..9°），仍然是“随手贴”浓度，但绝不压中间的文案。
- *  相框里用 object-contain 保留照片本身比例（不裁切），相框外留白由白色纸片填充。
+ * 撒点坐标（% 于整幅画布）。
+ * 宽靠 `size`（% of 画布宽），高自然跟随图片比例 h:auto → 绝不裁切。
+ * 为了不再“顶上一排 / 底下空一截”，把竖图当“立柱”嵌进左右，把 3:2 大横图分放上/底角，
+ * 中部中上则放两张充当过渡带收口。
  */
 const TILES: Array<{ top: number; left: number; size: number; rot: number }> = [
-  // —— 上条带（这几张放大成主视觉，横排错峰——不要两两一样高）——
-  { top: 3, left: 2, size: 18, rot: -6 },
-  { top: 7, left: 20, size: 13, rot: 4 },
-  { top: 2, left: 35, size: 18, rot: 2 },
-  { top: 8, left: 52, size: 13, rot: -3 },
-  { top: 3, left: 68, size: 18, rot: 5 },
-  { top: 7, left: 85, size: 13, rot: -4 },
-  // —— 左 / 右长条竖排（贴外边，放大；口播正下方留出）——
-  { top: 26, left: 2, size: 13, rot: 3 },
-  { top: 45, left: 2, size: 13, rot: -4 },
-  { top: 26, left: 85, size: 13, rot: -3 },
-  { top: 45, left: 85, size: 13, rot: 4 },
-  // —— 底部两格（画布加高后用剩出来的下排，依旧远离 CTA）——
-  { top: 66, left: 12, size: 16, rot: 2 },
-  { top: 66, left: 72, size: 16, rot: -2 },
+  // i0 —001 横·左上大主角
+  { top: 3, left: 1.5, size: 21, rot: -5 },
+  // i1 —002 横·上方偏左（与左上主角错峰，不贴脸）
+  { top: 1, left: 23, size: 13, rot: 4 },
+  // i2 —003 竖·左侧立柱上段
+  { top: 34, left: 1.5, size: 13.5, rot: 3 },
+  // i3 —004 竖·左侧立柱下段
+  { top: 60, left: 1, size: 14, rot: -3 },
+  // i4 —005 竖·右立柱上段
+  { top: 33, left: 85.5, size: 13.5, rot: -2 },
+  // i5 —006 横·底部偏左的大图（把下盘撑起来，不再空空如也）
+  { top: 63, left: 17.5, size: 20, rot: 2 },
+  // i6 —007 竖·最左靠边缘细柱 中
+  { top: 36, left: 16.8, size: 9, rot: 5 }, // 宽但窄的占位：让底部与立柱间留呼吸
+  // i7 —008 横·上方偏右（对称 001 的右上角）
+  { top: 5, left: 51, size: 13, rot: -3 },
+  // i8 —009 横·右上第二张大主角（贴着右侧留白）
+  { top: 3, left: 65.5, size: 20, rot: 5 },
+  // i9 —010 窄竖 9:16·最右侧超高细柱（贯穿中部，真正用满高度）
+  { top: 2, left: 86.8, size: 12.5, rot: -4 },
+  // i10 —011 竖·右内立柱下段
+  { top: 62, left: 59, size: 11, rot: 3 },
+  // i11 —012 横·底部偏右大图，与 006 平衡不挤
+  { top: 66, left: 71, size: 18, rot: -2 },
 ]
 
 interface Props {
@@ -54,62 +82,64 @@ export default function PhotoIntroStage({ onBegin }: Props) {
       }}
     >
       <div
-        className="relative mx-auto w-full max-w-[1000px]"
-        style={{ height: 'clamp(620px, 86vh, 920px)' }}
+        className="relative mx-auto w-full max-w-[1200px]"
+        style={{ height: 'clamp(620px, 88vh, 960px)' }}
       >
-        {/* --- 随手贴满的外圈“快门墙”：等比自然满幅，不等于同样大小/配对 --- */}
-        {TILES.map((tile, i) => (
-          <motion.figure
-            key={SCENES[i]}
-            className="pointer-events-none absolute aspect-[4/3] w-auto overflow-hidden rounded-xl shadow-[0_10px_22px_rgba(100,70,30,0.14)]"
-            style={{
-              // 贴纸面积 = 照片本身 → 不再有白纸相框占走尺寸，图片铺满整块
-              // （裁剪少量边缘换取“贴纸即照片”，可见度最大；4:3 宽高比写进 class 才能生效）。
-              left: `${tile.left}%`,
-              top: `${tile.top}%`,
-              width: `${tile.size}%`,
-              rotate: `${tile.rot}deg`,
-            }}
-            initial={{ opacity: 0, scale: 0.7 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 0.15 + (i % TILES.length) * 0.05, type: 'spring', stiffness: 160, damping: 18 }}
-          >
-            {/* cover：照片铺满整个贴纸，边缘做极轻裁切换取最大可视面积，无白框 */}
-            <img
-              src={SCENES[i]}
-              alt=""
-              loading="lazy"
-              draggable={false}
-              className="h-full w-full scale-[1.01] rounded-xl object-cover"
-            />
-          </motion.figure>
-        ))}
+        {TILES.map((tile, i) => {
+          const d = NATIVE[i]
+          const wPct = tile.size
+          return (
+            <motion.figure
+              key={SHOTS[i]}
+              className="pointer-events-none absolute"
+              style={{
+                left: `${tile.left}%`,
+                top: `${tile.top}%`,
+                width: `${wPct}%`,
+                rotate: `${tile.rot}deg`,
+              }}
+              initial={{ opacity: 0, scale: 0.6, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{
+                delay: 0.03 + i * 0.05,
+                type: 'spring',
+                stiffness: 140,
+                damping: 17,
+                mass: 0.65,
+              }}
+            >
+              {/* w-full + h-auto = 原图等比铺满给定宽，绝不拉伸或裁切 */}
+              <img
+                src={SHOTS[i]}
+                alt=""
+                width={d.w}
+                height={d.h}
+                loading="lazy"
+                decoding="async"
+                draggable={false}
+                className="block h-auto w-full rounded-xl drop-shadow-[0_10px_18px_rgba(110,75,30,0.18)]"
+              />
+            </motion.figure>
+          )
+        })}
 
-        {/* --- 中央只放轻量文案 + 开始按钮；不再用白色实底卡片压住中央照片，
-             改成极浅磨砂文字区，让外圈作品能透过半透明区域自然透出 --- */}
-        <div
-          className="pointer-events-none absolute left-1/2 top-1/2 w-[clamp(300px,60%,560px)] -translate-x-1/2 -translate-y-1/2"
-        >
+        {/* 中央文案 + CTA :: 体积克制，四周全留白，绝不让相纸盖住 */}
+        <div className="pointer-events-none absolute left-1/2 top-1/2 w-[clamp(296px,58%,560px)] -translate-x-1/2 -translate-y-1/2">
           <motion.div
-            initial={{ opacity: 0, y: 16, filter: 'blur(6px)' }}
+            initial={{ opacity: 0, y: 14, filter: 'blur(6px)' }}
             animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-            transition={{ delay: 0.5, duration: 0.6, ease: 'easeOut' }}
-            className="flex flex-col items-center gap-4 text-center"
+            transition={{ delay: 0.4, duration: 0.6, ease: 'easeOut' }}
+            className="flex flex-col items-center gap-3 text-center"
           >
-            {/* 微型眉题：半透明白细胶囊，几乎不遮图 */}
             <span className="rounded-full bg-[rgba(255,252,245,0.5)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
               拿起相机的每一刻
             </span>
-
-            {/* 主文案：不用不透明底板，用深色文字 + 柔黑影保证在照片上可读 */}
-            <h2 className="max-w-[460px] text-[clamp(17px,3.6vw,26px)] font-black leading-snug text-[#241c10] [filter:drop-shadow(0_2px_10px_rgba(255,248,238,0.9))]">
+            <h2 className="max-w-[460px] text-[clamp(17px,3.4vw,25px)] font-black leading-snug text-[#241c10] [filter:drop-shadow(0_2px_12px_rgba(255,248,236,0.95))]">
               摄影，是我在平凡缝隙里捕捉光的方式
             </h2>
-            <p className="max-w-[400px] text-[13px] font-semibold leading-6 text-[#3b2f1e] [filter:drop-shadow(0_1px_6px_rgba(255,250,242,0.9))]">
+            <p className="max-w-[390px] text-[13px] font-semibold leading-6 text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
               走到景深处，让快门替万物放慢。
             </p>
-
-            {/* CTA：仍旧醒目，但用更小胶囊体积，四周留出空气不遮满 */}
             <button
               onClick={onBegin}
               className="pointer-events-auto group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff7eb6]/92 to-[#f3c15f]/92 px-5 py-2.5 text-[14px] font-black text-white shadow-[0_12px_24px_rgba(120,60,30,0.2)] ring-2 ring-white/70 backdrop-blur-[4px] transition hover:scale-[1.05] focus:outline-none focus:ring-4 focus:ring-[#ff9fc6]/55 active:scale-95"
@@ -117,10 +147,6 @@ export default function PhotoIntroStage({ onBegin }: Props) {
               开始浏览摄影作品
               <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
             </button>
-
-            <p className="text-[11px] font-semibold text-[#4c3f2a] [filter:drop-shadow(0_1px_4px_rgba(255,249,241,0.95))]">
-              轻点按钮，逐张翻阅我的取景与按下快门的瞬间
-            </p>
           </motion.div>
         </div>
       </div>
