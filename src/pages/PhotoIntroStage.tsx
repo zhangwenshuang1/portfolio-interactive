@@ -77,7 +77,7 @@ function layoutWall(
   gap: number,
 ): Tile[] {
   const rand = seededRand('wall-2026')
-  const pad = Math.max(14, Math.round(BW * 0.022)) // 面板四周留白；先放进逻辑也可于板外则换边
+  const pad = Math.max(8, Math.round(BW * 0.011)) // 面板四周留白收窄：更贴近版心、少一点边沿大空隙
   const out: Tile[] = []
 
   // 可用范围（一个闭环：中央禁入矩形），四周边缘留 pad
@@ -102,9 +102,11 @@ function layoutWall(
   for (let i = 0; i < SHOT_COUNT; i++) {
     const ar = NATIVE[i].w / NATIVE[i].h
     const isPortrait = ar < 1
-    // 起始尺寸：竖图宽约 16–19%板宽、横图约 20–25% —— 相对整块大墙明显放大，
-    // 让每张真正“当家”，而不是贴一首小签。
-    const w0 = BW * (isPortrait ? 0.165 + rand() * 0.035 : 0.2 + rand() * 0.05)
+    // 起始尺寸再放大一档逼近可容上限：竖图宽约 19–23%板宽、横图约 23–28%，
+    // 同时四周留白收窄，观感更密、更没空虚感（缩退化兜底仍保证绝不重叠）。
+    const w0 =
+      BW *
+      (isPortrait ? 0.19 + rand() * 0.04 : 0.235 + rand() * 0.05)
     let w = w0
     // 竖图纵深更高、更吃空间：把它最小步进放宽些，便于塞进外围空带又不至于遮挡
     const minW = Math.max(56, w0 * (isPortrait ? 0.42 : 0.5))
@@ -229,15 +231,17 @@ export default function PhotoIntroStage({ onBegin }: Props) {
     const frame = requestAnimationFrame(() => {
       const bb = board.getBoundingClientRect()
       const cb = center.getBoundingClientRect()
-      // 远离中心一点：允许相纸贴近文案，但保持合理呼吸空隙
-      const breath = Math.max(20, Math.round(bb.width * 0.034))
+      // 远离中心一点：允许相纸贴近文案，但保持合理（更紧凑的）呼吸空隙
+      const breath = Math.max(14, Math.round(bb.width * 0.019))
       const avoid: Rect = {
         x0: cb.left - bb.left - breath,
         x1: cb.right - bb.left + breath,
         y0: cb.top - bb.top - breath,
         y1: cb.bottom - bb.top + breath,
       }
-      const gap = Math.min(20, Math.max(12, Math.round(bb.width * 0.014)))
+      const gap = Math.min(14, Math.max(7, Math.round(bb.width * 0.008)))
+      // 相纸彼此的空隙收得更紧，让墙更有“铺满”感但仍留像素级安全边
+
       setTiles(layoutWall(bb.width, bb.height, avoid, gap))
     })
     return () => cancelAnimationFrame(frame)
@@ -300,13 +304,13 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             className="flex flex-col items-center gap-3 text-center"
           >
             <span className="rounded-full bg-[rgba(255,252,245,0.58)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
-              拿起相机的每一刻
+              人像 · 人物 · 相遇
             </span>
             <h2 className="max-w-[440px] text-[clamp(16px,3.2vw,24px)] font-black leading-snug text-[#241c10] [filter:drop-shadow(0_2px_12px_rgba(255,248,236,0.95))]">
-              摄影，是我在平凡缝隙里捕捉光的方式
+              我拍的大多是人物——因为每张脸背后都有一份故事
             </h2>
-            <p className="max-w-[360px] text-[13px] font-semibold leading-6 text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              走到景深处，让快门替万物放慢。
+            <p className="max-w-[372px] text-[13px] font-semibold leading-6 text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
+              眉眼、笑意、某刻的情绪，都值得被认真留下。快门一落，遇见就成了回忆。
             </p>
             <button
               onClick={onBegin}
