@@ -74,8 +74,9 @@ function layoutWall(
   BH: number,
   freeRect: Rect,
   gap: number,
+  seedKey: string,
 ): Tile[] {
-  const rand = seededRand('wall-2026')
+  const rand = seededRand(seedKey)
   const pad = Math.max(8, Math.round(BW * 0.011)) // 面板四周留白收窄：更贴近版心、少一点边沿大空隙
   const out: Tile[] = []
 
@@ -101,11 +102,11 @@ function layoutWall(
   for (let i = 0; i < SHOT_COUNT; i++) {
     const ar = NATIVE[i].w / NATIVE[i].h
     const isPortrait = ar < 1
-    // 起始尺寸再放大一档逼近可容上限：竖图宽约 19–23%板宽、横图约 23–28%，
+    // 起始尺寸逼近可容上限：竖图宽约 20–25%板宽、横图约 26–31%，
     // 同时四周留白收窄，观感更密、更没空虚感（缩退化兜底仍保证绝不重叠）。
     const w0 =
       BW *
-      (isPortrait ? 0.19 + rand() * 0.04 : 0.235 + rand() * 0.05)
+      (isPortrait ? 0.2 + rand() * 0.05 : 0.26 + rand() * 0.05)
     let w = w0
     // 竖图纵深更高、更吃空间：把它最小步进放宽些，便于塞进外围空带又不至于遮挡
     const minW = Math.max(56, w0 * (isPortrait ? 0.42 : 0.5))
@@ -241,7 +242,37 @@ export default function PhotoIntroStage({ onBegin }: Props) {
       const gap = Math.min(14, Math.max(7, Math.round(bb.width * 0.008)))
       // 相纸彼此的空隙收得更紧，让墙更有“铺满”感但仍留像素级安全边
 
-      setTiles(layoutWall(bb.width, bb.height, avoid, gap))
+      // —— 均衡构造：同一布局算法用多个随机种子各排一遍，挑一个“上下两半里横竖照片都
+      // 齐、不一边倒”的解，从根上避免“横图全堆上方 / 竖图全贴下方”的扎堆 ——
+      const midV = bb.height / 2
+      const isH = (i: number) => NATIVE[i].w / NATIVE[i].h > 1
+      let picked: Tile[] = layoutWall(bb.width, bb.height, avoid, gap, 'wall-base')
+      for (let s = 0; s < 80; s++) {
+        const cand = layoutWall(bb.width, bb.height, avoid, gap, 'wall-bal-' + s)
+        let topN = 0,
+          botN = 0,
+          topMix = 0,
+          botMix = 0
+        cand.forEach((tl, i) => {
+          const hh = tl.w / (NATIVE[i].w / NATIVE[i].h)
+          const cy = tl.y + hh / 2
+          if (cy < midV) {
+            topN++
+            if (isH(i)) topMix |= 1
+            else topMix |= 2
+          } else {
+            botN++
+            if (isH(i)) botMix |= 1
+            else botMix |= 2
+          }
+        })
+        // 达标：两半各自同时有横图也有竖图，且任一半都不至于过头
+        if (topN >= 3 && botN >= 3 && topMix === 3 && botMix === 3) {
+          picked = cand
+          break
+        }
+      }
+      setTiles(picked)
     })
     return () => cancelAnimationFrame(frame)
   }, [])
@@ -302,21 +333,27 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             transition={{ delay: 0.4, duration: 0.6, ease: 'easeOut' }}
             className="flex flex-col items-center gap-3 text-center"
           >
-            <span className="rounded-full bg-[rgba(255,252,245,0.58)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.3em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
-              人像 · 人物 · 相遇
+            <span className="rounded-full bg-[rgba(255,252,245,0.62)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.42em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
+              人物 · 肖像 · 我目光所及
             </span>
-            <h2 className="max-w-[440px] text-[clamp(16px,3.2vw,24px)] font-black leading-snug text-[#241c10] [filter:drop-shadow(0_2px_12px_rgba(255,248,236,0.95))]">
-              我拍的大多是人物——因为每张脸背后都有一份故事
+            <h2 className="max-w-[460px] text-[clamp(17px,3.1vw,25px)] font-black leading-snug tracking-wide text-[#241c10] [filter:drop-shadow(0_2px_12px_rgba(255,248,236,0.95))]">
+              我拍人，也拍
+              <span className="bg-gradient-to-r from-[#c0562a] via-[#d97a3a] to-[#b0395f] bg-clip-text text-transparent antialiased">
+                人眼底的光
+              </span>
             </h2>
-            <p className="max-w-[372px] text-[13px] font-semibold leading-6 text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              眉眼、笑意、某刻的情绪，都值得被认真留下。快门一落，遇见就成了回忆。
+            <p className="max-w-[390px] text-[13.5px] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
+              眉眼之间、笑意之外，藏着一整段人生。快门响起的瞬间，
+              平凡也被标成永恒。
             </p>
             <button
               onClick={onBegin}
-              className="pointer-events-auto group inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff7eb6]/92 to-[#f3c15f]/92 px-5 py-2.5 text-[14px] font-black text-white shadow-[0_12px_24px_rgba(120,60,30,0.2)] ring-2 ring-white/70 backdrop-blur-[4px] transition hover:scale-[1.05] focus:outline-none focus:ring-4 focus:ring-[#ff9fc6]/55 active:scale-95"
+              className="pointer-events-auto group mt-1 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff2d78] via-[#ff5d3a] to-[#ffb020] px-7 py-3 text-[15px] font-black text-white shadow-[0_14px_28px_rgba(242,60,90,0.45),inset_0_1px_0_rgba(255,255,255,0.55)] ring-2 ring-white/80 backdrop-blur-[4px] transition hover:scale-[1.06] hover:shadow-[0_18px_36px_rgba(242,60,90,0.55)] focus:outline-none focus:ring-4 focus:ring-[#ff5d3a]/50 active:scale-95"
             >
-              开始浏览摄影作品
-              <span className="transition-transform duration-300 group-hover:translate-x-1">→</span>
+              开始浏览我的作品
+              <span className="translate-x-0 text-[17px] transition-transform duration-300 group-hover:translate-x-1.5">
+                →
+              </span>
             </button>
           </motion.div>
         </div>
