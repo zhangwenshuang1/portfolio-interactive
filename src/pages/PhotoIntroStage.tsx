@@ -35,37 +35,39 @@ const NATIVE: Array<{ w: number; h: number }> = [
 ]
 
 /**
- * 撒点坐标（% 于整幅画布）。
- * 宽靠 `size`（% of 画布宽），高自然跟随图片比例 h:auto → 绝不裁切。
- * 为了不再“顶上一排 / 底下空一截”，把竖图当“立柱”嵌进左右，把 3:2 大横图分放上/底角，
- * 中部中上则放两张充当过渡带收口。
+ * 「环形、直立、均匀留缝」—— 不再用随机高差拼贴，也绝不“放倒”任何一张。
+ *
+ * 核心规则：
+ *  •  **竖直直立**：全部照片 rotate:0 —— 竖图永远正着站、横图老实躺着，绝无倾斜感；
+ *  •  **均匀分布 / 均匀空隙**：12 张照片的「中心」按 360°/12 = 30° 等角绕一个椭圆排成
+ *     一圈（angle start 置顶）。用纯「极坐标 + translate(-50%,-50%)」生成，所有相邻的空隙
+ *     天生相等 —— 不会一堆挤在一起、另一边空一坨；中央椭圆正好为徽章/标题/按钮透明让位；
+ *  •  每张仍以原图比例 w-full h-auto 铺底（见渲染段），竖、横各自保持自然形状，零裁切；
+ *  •  环形不占满四角——左右、上下自然留出与画布等距的边缘，视觉上环绕均衡。
+ *
+ * 用 <k> 直接即时生成坐标，而不是写死 12 组散点坐标，改缝隙只需要调 RX / RY / RING_SHARE。
  */
-const TILES: Array<{ top: number; left: number; size: number; rot: number }> = [
-  // i0 —001 横·左上大主角
-  { top: 3, left: 1.5, size: 21, rot: -5 },
-  // i1 —002 横·上方偏左（与左上主角错峰，不贴脸）
-  { top: 1, left: 23, size: 13, rot: 4 },
-  // i2 —003 竖·左侧立柱上段
-  { top: 34, left: 1.5, size: 13.5, rot: 3 },
-  // i3 —004 竖·左侧立柱下段
-  { top: 60, left: 1, size: 14, rot: -3 },
-  // i4 —005 竖·右立柱上段
-  { top: 33, left: 85.5, size: 13.5, rot: -2 },
-  // i5 —006 横·底部偏左的大图（把下盘撑起来，不再空空如也）
-  { top: 63, left: 17.5, size: 20, rot: 2 },
-  // i6 —007 竖·最左靠边缘细柱 中
-  { top: 36, left: 16.8, size: 9, rot: 5 }, // 宽但窄的占位：让底部与立柱间留呼吸
-  // i7 —008 横·上方偏右（对称 001 的右上角）
-  { top: 5, left: 51, size: 13, rot: -3 },
-  // i8 —009 横·右上第二张大主角（贴着右侧留白）
-  { top: 3, left: 65.5, size: 20, rot: 5 },
-  // i9 —010 窄竖 9:16·最右侧超高细柱（贯穿中部，真正用满高度）
-  { top: 2, left: 86.8, size: 12.5, rot: -4 },
-  // i10 —011 竖·右内立柱下段
-  { top: 62, left: 59, size: 11, rot: 3 },
-  // i11 —012 横·底部偏右大图，与 006 平衡不挤
-  { top: 66, left: 71, size: 18, rot: -2 },
-]
+const RX = 43.5 // 椭圆横半轴：占画布宽 %
+const RY = 39.5 // 椭圆纵半轴 %
+const STEP = 30 // 每相邻两张的圆心夹角（deg）== 360/12 —— 等距
+
+const angleOf = (i: number) => ((i * STEP - 90) * Math.PI) / 180 // k 从 "顶/正上方" 起绕一圈
+const centerTiles = Array.from({ length: 12 }, (_, i) => {
+  const a = angleOf(i)
+  return {
+    // 圆心在椭圆上、±影进中心环形空腔；X,Y 语义即 figure 的 center
+    leftPct: 50 + RX * Math.cos(a),
+    topPct: 50 + RY * Math.sin(a),
+  }
+})
+/** 视觉等比例统一放置：横半轴对应 board 高更长的方向，让每张不大不小的匀称 */
+const TILES: Array<{ top: number; left: number; size: number }> = centerTiles.map((c) => ({
+  top: Number(c.topPct.toFixed(2)),
+  left: Number(c.leftPct.toFixed(2)),
+  // 每张给一个适中的宽度（% 于整幅画布宽）。这里把每 30° 弧长切分后留一档做间隙：
+  // 不设超大“主角”，使相邻之间始终有相同呼吸。
+  size: 12.8,
+})) as Array<{ top: number; left: number; size: number }>
 
 interface Props {
   /** 用户在场景幕点“开始”后唤醒轮播 */
@@ -92,23 +94,26 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             <motion.figure
               key={SHOTS[i]}
               className="pointer-events-none absolute"
+              // 0° 直立：布局坐标为「圆心」，用独立 CSS translate 把图片中心移到该点上 ——
+              // 因为 CSS `translate` 与 framer 的 `transform` 互不覆盖，竖图永不歪放。
               style={{
                 left: `${tile.left}%`,
                 top: `${tile.top}%`,
                 width: `${wPct}%`,
-                rotate: `${tile.rot}deg`,
+                translate: '-50% -50%',
+                willChange: 'transform',
               }}
-              initial={{ opacity: 0, scale: 0.6, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
+              initial={{ opacity: 0, scale: 0.55 }}
+              animate={{ opacity: 1, scale: 1 }}
               transition={{
                 delay: 0.03 + i * 0.05,
                 type: 'spring',
-                stiffness: 140,
-                damping: 17,
-                mass: 0.65,
+                stiffness: 160,
+                damping: 20,
+                mass: 0.6,
               }}
             >
-              {/* w-full + h-auto = 原图等比铺满给定宽，绝不拉伸或裁切 */}
+              {/* w-full + h-auto = 原图等比铺满给定宽，绝不拉伸或裁切、绝不放倒 */}
               <img
                 src={SHOTS[i]}
                 alt=""
@@ -117,7 +122,7 @@ export default function PhotoIntroStage({ onBegin }: Props) {
                 loading="lazy"
                 decoding="async"
                 draggable={false}
-                className="block h-auto w-full rounded-xl drop-shadow-[0_10px_18px_rgba(110,75,30,0.18)]"
+                className="block h-auto w-full rounded-xl drop-shadow-[0_10px_18px_rgba(110,75,30,0.16)]"
               />
             </motion.figure>
           )
