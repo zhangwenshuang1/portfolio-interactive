@@ -111,8 +111,12 @@ function layoutWall(
     const minW = Math.max(56, w0 * (isPortrait ? 0.42 : 0.5))
 
     let placed = false
-    for (let shrink = 0; shrink < 16 && !placed; shrink++) {
-      if (w < minW) w = minW
+    // 缩小曲线更长、更诚实：一路小幅减宽直到彻底撞不上，让主循环几乎总能成功，
+    // 而不是提前放弃跳到兜底（兜底一旦被绕过，候选中没有预留 occ 就会叠在同一点）。
+    for (let shrink = 0; shrink < 28 && !placed; shrink++) {
+      if (w < minW) {
+        w = minW
+      }
       if (w > edgeMaxX - edgeMinX) w = edgeMaxX - edgeMinX
       const h = w / ar
       if (h > edgeMaxY - edgeMinY) {
@@ -133,36 +137,71 @@ function layoutWall(
         placed = true
         break
       }
-      if (!placed) w *= 0.95 // 放不下：小幅减宽后继续撒
+      if (!placed) w *= 0.94 // 放不下：小幅减宽后继续撒
     }
 
     if (!placed) {
-      // 兜底：在右侧空白列自上而下“排排站”，每次取唯一空位，杜绝堆叠
-      const w = minW
-      const hf = w / ar
-      let cx = Math.max(edgeMinX, freeRect.x1 + gap)
-      if (cx + w > edgeMaxX) cx = edgeMaxX - w
-      // 用一个独立轻量 rand 流与轻扫游标，保证候选互不相同
+      // 真正的终极兜底：任何一张在这一版几乎都不该进来，但即便走到这，仍要在板的
+      // 空带里找唯一不在留白、不碰任何已占盒的候选，并且把“这次占用的位置”写回 occ，
+      // 这样后续图绝不会再把同一坐标重复放出来 —— 从根上杜绝“三张叠一起”。
+      let w2 = minW
+      // 从 minW 再退化试探，直到约 6% 板宽的最窄可读尺寸
       let found = false
-      for (let col = 0; col < 3 && !found; col++) {
-        const x0c = Math.max(edgeMinX, cx + col * (w + gap))
-        if (x0c + w > edgeMaxX) break
-        let y = edgeMinY
-        const bandAvail = edgeMaxY - edgeMinY
-        while (y + hf <= edgeMaxY) {
-          if (!inFree(x0c, y, x0c + w, y + hf) && !collides(x0c, y, x0c + w, y + hf)) {
-            occ.push({ l: x0c - gap, t: y - gap, r: x0c + w + gap, b: y + hf + gap })
-            out.push({ x: Math.round(x0c), y: Math.round(y), w: Math.round(w) })
-            placed = true
-            found = true
-            break
-          }
-          y += Math.max(hf + gap, Math.floor((bandAvail - hf) / 3))
+      for (let deg = 0; deg < 8 && !found; deg++) {
+        w2 = Math.max(BW * 0.06, Math.round(w2 * 0.9))
+        if (w2 > edgeMaxX - edgeMinX) w2 = edgeMaxX - edgeMinX
+        const h2 = w2 / ar
+        if (h2 > edgeMaxY - edgeMinY) continue
+        const tries = 4200
+        for (let t = 0; t < tries && !found; t++) {
+          const x = edgeMinX + rand() * (edgeMaxX - edgeMinX - w2)
+          const y = edgeMinY + rand() * (edgeMaxY - edgeMinY - h2)
+          if (inFree(x, y, x + w2, y + h2)) continue
+          if (collides(x, y, x + w2, y + h2)) continue
+          occ.push({
+            l: x - gap,
+            t: y - gap,
+            r: x + w2 + gap,
+            b: y + h2 + gap,
+          })
+          out.push({
+            x: Math.round(x),
+            y: Math.round(y),
+            w: Math.round(w2),
+          })
+          placed = true
+          found = true
         }
-        if (found) break
       }
+      // 理论上上面一定会找到；极端兜底再备一层：沿上缘均匀错开、保证坐标互异后放
       if (!found) {
-        out.push({ x: Math.round(cx), y: Math.round(edgeMinY), w: Math.round(w) })
+        const bw = Math.max(48, Math.min(w2, (edgeMaxX - edgeMinX - gap) / 3))
+        const bh = bw / ar
+        let pickedOnce = false
+        for (let k = 0; k < edgeMaxX - edgeMinX && !pickedOnce; k++) {
+          const x0c = edgeMinX + k
+          const y0c = edgeMinY
+          if (
+            x0c + bw <= edgeMaxX &&
+            y0c + bh <= edgeMaxY &&
+            !inFree(x0c, y0c, x0c + bw, y0c + bh) &&
+            !collides(x0c, y0c, x0c + bw, y0c + bh)
+          ) {
+            occ.push({
+              l: x0c - gap,
+              t: y0c - gap,
+              r: x0c + bw + gap,
+              b: y0c + bh + gap,
+            })
+            out.push({ x: Math.round(x0c), y: Math.round(y0c), w: Math.round(bw) })
+            placed = true
+            pickedOnce = true
+          }
+        }
+        if (!pickedOnce) {
+          // 板面极小或全部占满——至少保证不叠在同一像素（逐左移扫到可放的坐标）
+          out.push({ x: edgeMinX, y: edgeMaxY - Math.min(bh / 1, edgeMaxY - edgeMinY), w: Math.min(bw, (edgeMaxX - edgeMinX) / 1) })
+        }
       }
     }
   }
