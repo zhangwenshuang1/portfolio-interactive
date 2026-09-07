@@ -47,8 +47,8 @@ const NATIVE: Array<{ w: number; h: number }> = [
  *
  * 用 <k> 直接即时生成坐标，而不是写死 12 组散点坐标，改缝隙只需要调 RX / RY / RING_SHARE。
  */
-const RX = 43.5 // 椭圆横半轴：占画布宽 %
-const RY = 39.5 // 椭圆纵半轴 %
+const RX = 37 // 椭圆横半轴：占画布宽 %
+const RY = 23 // 椭圆纵半轴 %（画布较矮时须整体收窄，保证竖图不进中央文案、也不越上下边缘）
 const STEP = 30 // 每相邻两张的圆心夹角（deg）== 360/12 —— 等距
 
 const angleOf = (i: number) => ((i * STEP - 90) * Math.PI) / 180 // k 从 "顶/正上方" 起绕一圈
@@ -66,7 +66,7 @@ const TILES: Array<{ top: number; left: number; size: number }> = centerTiles.ma
   left: Number(c.leftPct.toFixed(2)),
   // 每张给一个适中的宽度（% 于整幅画布宽）。这里把每 30° 弧长切分后留一档做间隙：
   // 不设超大“主角”，使相邻之间始终有相同呼吸。
-  size: 12.8,
+  size: 11,
 })) as Array<{ top: number; left: number; size: number }>
 
 interface Props {
