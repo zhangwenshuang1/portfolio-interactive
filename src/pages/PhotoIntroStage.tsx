@@ -145,10 +145,10 @@ function layoutWall(
       // 空带里找唯一不在留白、不碰任何已占盒的候选，并且把“这次占用的位置”写回 occ，
       // 这样后续图绝不会再把同一坐标重复放出来 —— 从根上杜绝“三张叠一起”。
       let w2 = minW
-      // 从 minW 再退化试探，直到约 6% 板宽的最窄可读尺寸
+      // 从 minW 再退化试探，地板只到约 10% 板宽 —— 决不让竖图缩成「细横线」失掉竖构图
       let found = false
       for (let deg = 0; deg < 8 && !found; deg++) {
-        w2 = Math.max(BW * 0.06, Math.round(w2 * 0.9))
+        w2 = Math.max(BW * 0.10, Math.round(w2 * 0.9))
         if (w2 > edgeMaxX - edgeMinX) w2 = edgeMaxX - edgeMinX
         const h2 = w2 / ar
         if (h2 > edgeMaxY - edgeMinY) continue
@@ -175,7 +175,10 @@ function layoutWall(
       }
       // 理论上上面一定会找到；极端兜底再备一层：沿上缘均匀错开、保证坐标互异后放
       if (!found) {
-        const bw = Math.max(48, Math.min(w2, (edgeMaxX - edgeMinX - gap) / 3))
+        const bw = Math.max(
+          Math.max(48, Math.round(BW * 0.085)),
+          Math.min(w2, (edgeMaxX - edgeMinX - gap) / 3),
+        )
         const bh = bw / ar
         let pickedOnce = false
         for (let k = 0; k < edgeMaxX - edgeMinX && !pickedOnce; k++) {
