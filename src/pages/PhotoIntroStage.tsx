@@ -77,14 +77,15 @@ function layoutWall(
   seedKey: string,
 ): Tile[] {
   const rand = seededRand(seedKey)
-  const pad = Math.max(8, Math.round(BW * 0.011)) // 面板四周留白收窄：更贴近版心、少一点边沿大空隙
+  // 面板四周留白放大些：让最外圈相纸离板边有一段清清爽爽的呼吸带，彼此更好分辨
+  const padOut = Math.max(10, Math.round(BW * 0.016))
   const out: Tile[] = []
 
-  // 可用范围（一个闭环：中央禁入矩形），四周边缘留 pad
-  const edgeMinX = pad
-  const edgeMaxX = BW - pad
-  const edgeMinY = pad
-  const edgeMaxY = BH - pad
+  // 可用范围（一个闭环：中央禁入矩形），四周边缘留 padOut 的呼吸带
+  const edgeMinX = padOut
+  const edgeMaxX = BW - padOut
+  const edgeMinY = padOut
+  const edgeMaxY = BH - padOut
 
   // 累积已占用的“扩展盒”（每个都加上 gap 以便宽松判定）
   const occ: Array<{ l: number; t: number; r: number; b: number }> = []
@@ -102,14 +103,14 @@ function layoutWall(
   for (let i = 0; i < SHOT_COUNT; i++) {
     const ar = NATIVE[i].w / NATIVE[i].h
     const isPortrait = ar < 1
-    // 起始尺寸逼近可容上限：竖图宽约 20–25%板宽、横图约 26–31%，
-    // 同时四周留白收窄，观感更密、更没空虚感（缩退化兜底仍保证绝不重叠）。
+    // 起始尺寸留有余裕：竖图宽约 18–23%板宽、横图约 23–28%，
+    // 四周留白较多、彼此间隙拉大 —— 九张“各占一席、绝不挤碰”的摊开册页质感。
     const w0 =
       BW *
-      (isPortrait ? 0.2 + rand() * 0.05 : 0.26 + rand() * 0.05)
+      (isPortrait ? 0.18 + rand() * 0.05 : 0.23 + rand() * 0.05)
     let w = w0
     // 竖图纵深更高、更吃空间：把它最小步进放宽些，便于塞进外围空带又不至于遮挡
-    const minW = Math.max(56, w0 * (isPortrait ? 0.42 : 0.5))
+    const minW = Math.max(54, w0 * (isPortrait ? 0.45 : 0.52))
 
     let placed = false
     // 缩小曲线更长、更诚实：一路小幅减宽直到彻底撞不上，让主循环几乎总能成功，
@@ -233,14 +234,16 @@ export default function PhotoIntroStage({ onBegin }: Props) {
       const cb = center.getBoundingClientRect()
       // 更贴近中央的“贴纸式”构图：呼吸空隙收得更紧，让围绕文案的一圈不留大空洞，
       // 但仍保证任何相纸都不压到文字
-      const breath = Math.max(12, Math.round(bb.width * 0.014))
+      // breath 也放大些：文字周围留的呼吸带允许相纸离得较远，绝无任何一张贴上文案
+      const breath = Math.max(16, Math.round(bb.width * 0.018))
       const avoid: Rect = {
         x0: cb.left - bb.left - breath,
         x1: cb.right - bb.left + breath,
         y0: cb.top - bb.top - breath,
         y1: cb.bottom - bb.top + breath,
       }
-      const gap = Math.min(14, Math.max(7, Math.round(bb.width * 0.008)))
+      // 相纸彼此的最小空隙放大：保证九张各自独立、边缘绝不接触/压到（视觉上也留出清爽间隔）
+      const gap = Math.max(14, Math.round(bb.width * 0.013))
       // 相纸彼此的空隙收得更紧，让墙更有“铺满”感但仍留像素级安全边
 
       // —— 均衡构造（这一版改成「对角相框四角取样」）：同一布局算法用多个随机种子各排一遍，
@@ -283,21 +286,21 @@ export default function PhotoIntroStage({ onBegin }: Props) {
         return total + sy * 4 + sx * 4
       }
 
-      let best: Tile[] = layoutWall(bb.width, bb.height, avoid, gap, 'wall-base')
+      let best: Tile[] = layoutWall(bb.width, bb.height, avoid, gap, 'album-base')
       let bestS = -Infinity
-      for (let s = 0; s < 160; s++) {
+      for (let s = 0; s < 240; s++) {
         const cand = layoutWall(
           bb.width,
           bb.height,
           avoid,
           gap,
-          'wall-corner2-' + s,
+          'album-clear-' + s,
         )
         const sc = score(cand)
         if (sc > bestS) {
           bestS = sc
           best = cand
-          if (sc >= 42) break
+          if (sc >= 40) break
         }
       }
       setTiles(best)
@@ -341,11 +344,11 @@ export default function PhotoIntroStage({ onBegin }: Props) {
               {/* hover 微光：紧贴相纸边缘的暖色晕圈，随悬停淡入 */}
               <span
                 aria-hidden
-                className="pointer-events-none absolute -inset-[3px] rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                className="pointer-events-none absolute -inset-[1.5px] rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                 style={{
                   background:
-                    'radial-gradient(120% 120% at 50% 50%, rgba(255,190,90,0) 55%, rgba(255,150,70,0.55) 78%, rgba(255,210,120,0.55) 88%, rgba(255,200,120,0) 100%)',
-                  filter: 'blur(5px)',
+                    'radial-gradient(120% 120% at 50% 50%, rgba(255,190,90,0) 60%, rgba(255,150,70,0.45) 84%, rgba(255,215,130,0.45) 92%, rgba(255,205,120,0) 100%)',
+                  filter: 'blur(4px)',
                 }}
               />
               <img
@@ -374,19 +377,19 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             className="flex flex-col items-center gap-3 text-center"
           >
             <span className="rounded-full bg-[rgba(255,252,245,0.62)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.42em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
-              快门手记 · 寄给岁月
+              胶片上的 · 九封信
             </span>
             <h2 className="max-w-[470px] text-[clamp(17px,3.05vw,25px)] font-black leading-snug tracking-wide text-[#241c10] [filter:drop-shadow(0_2px_12px_rgba(255,248,236,0.95))]">
-              别急着说完再见，
+              趁还没被风吹散，
               <br className="sm:hidden" />
-              先替岁月收藏一些
+              我把舍不得的都叠进
               <span className="bg-gradient-to-r from-[#0f9b8e] via-[#3b8fd9] to-[#b0395f] bg-clip-text text-transparent antialiased">
-                无声的温柔
+                方寸之间
               </span>
             </h2>
             <p className="max-w-[400px] text-[13.5px] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              风会把合上又打开的纪念册翻得哗哗响，
-              而我，只挑几页舍不得被吹走的留下。
+              一张相纸，是一个被我轻轻合上的片段——
+              你若翻开，请慢一点。
             </p>
             <button
               onClick={onBegin}
