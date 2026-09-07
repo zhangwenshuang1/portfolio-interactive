@@ -107,10 +107,12 @@ function layoutWall(
     // 让每张真正“当家”，而不是贴一首小签。
     const w0 = BW * (isPortrait ? 0.165 + rand() * 0.035 : 0.2 + rand() * 0.05)
     let w = w0
+    // 竖图纵深更高、更吃空间：把它最小步进放宽些，便于塞进外围空带又不至于遮挡
+    const minW = Math.max(56, w0 * (isPortrait ? 0.42 : 0.5))
 
     let placed = false
-    // 从大到小试着放；多轮缩小仍尽量只到 w0 的 ~2/3 就接受，避免变成细长小签
-    for (let shrink = 0; shrink < 14 && !placed && w >= w0 * 0.6; shrink++) {
+    for (let shrink = 0; shrink < 16 && !placed; shrink++) {
+      if (w < minW) w = minW
       if (w > edgeMaxX - edgeMinX) w = edgeMaxX - edgeMinX
       const h = w / ar
       if (h > edgeMaxY - edgeMinY) {
@@ -118,7 +120,9 @@ function layoutWall(
         continue
       }
       // 在可放空间中随机采样，拒绝侵入留白或与已有重叠的候选
-      const tries = Math.max(2400, Math.ceil((BW * BH) / (w * h)) * 48)
+      const tries =
+        3200 +
+        Math.ceil((BW * BH) / (w * h)) * 60
       for (let t = 0; t < tries && !placed; t++) {
         const x = edgeMinX + rand() * (edgeMaxX - edgeMinX - w)
         const y = edgeMinY + rand() * (edgeMaxY - edgeMinY - h)
@@ -127,26 +131,39 @@ function layoutWall(
         occ.push({ l: x - gap, t: y - gap, r: x + w + gap, b: y + h + gap })
         out.push({ x: Math.round(x), y: Math.round(y), w: Math.round(w) })
         placed = true
+        break
       }
-      if (!placed) w *= 0.94 // 放不下：小幅减宽后继续撒
+      if (!placed) w *= 0.95 // 放不下：小幅减宽后继续撒
     }
 
     if (!placed) {
-      // 兜底 —— 仍争取更大的尺寸放到右侧纵列，而非缩小到看不清
-      w = Math.max(w0 * 0.7, w)
+      // 兜底：在右侧空白列自上而下“排排站”，每次取唯一空位，杜绝堆叠
+      const w = minW
       const hf = w / ar
-      if (hf > edgeMaxY - edgeMinY) w = (edgeMaxY - edgeMinY) * ar
-      const cx = Math.max(edgeMinX, freeRect.x1 + gap)
-      const tryList = [0.2, 0.6, 0.85, 0.4].map((k) => k * (edgeMaxX - w - cx) + cx)
-      let cy = edgeMinY
-      for (const dx of tryList) {
-        const candY = edgeMinY + Math.min(edgeMaxY - w / ar - edgeMinY, rand() * (BH - 2 * pad))
-        if (!collides(dx, candY, dx + w, candY + w / ar) && !inFree(dx, candY, dx + w, candY + w / ar)) {
-          cy = candY
-          break
+      let cx = Math.max(edgeMinX, freeRect.x1 + gap)
+      if (cx + w > edgeMaxX) cx = edgeMaxX - w
+      // 用一个独立轻量 rand 流与轻扫游标，保证候选互不相同
+      let found = false
+      for (let col = 0; col < 3 && !found; col++) {
+        const x0c = Math.max(edgeMinX, cx + col * (w + gap))
+        if (x0c + w > edgeMaxX) break
+        let y = edgeMinY
+        const bandAvail = edgeMaxY - edgeMinY
+        while (y + hf <= edgeMaxY) {
+          if (!inFree(x0c, y, x0c + w, y + hf) && !collides(x0c, y, x0c + w, y + hf)) {
+            occ.push({ l: x0c - gap, t: y - gap, r: x0c + w + gap, b: y + hf + gap })
+            out.push({ x: Math.round(x0c), y: Math.round(y), w: Math.round(w) })
+            placed = true
+            found = true
+            break
+          }
+          y += Math.max(hf + gap, Math.floor((bandAvail - hf) / 3))
         }
+        if (found) break
       }
-      out.push({ x: Math.round(cx), y: Math.round(cy), w: Math.round(w) })
+      if (!found) {
+        out.push({ x: Math.round(cx), y: Math.round(edgeMinY), w: Math.round(w) })
+      }
     }
   }
 
