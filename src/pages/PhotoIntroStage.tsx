@@ -243,61 +243,61 @@ export default function PhotoIntroStage({ onBegin }: Props) {
       const gap = Math.min(14, Math.max(7, Math.round(bb.width * 0.008)))
       // 相纸彼此的空隙收得更紧，让墙更有“铺满”感但仍留像素级安全边
 
-      // —— 均衡构造：同一布局算法用多个随机种子各排一遍，挑一个“上下两半里横竖照片都
-      // 齐、不一边倒”的解，从根上避免“横图全堆上方 / 竖图全贴下方”的扎堆 ——
-      const midV = bb.height / 2
-      const midH = bb.width / 2
+      // —— 均衡构造（这一版改成「对角相框四角取样」）：同一布局算法用多个随机种子各排一遍，
+      // 挑一个让 4 个对角角落区（左上/右上/左下/右下）都尽量有相纸、且每角都试着横竖错位
+      // 的解，把画面撑成一本合拢的“纪念册”——四角堆叠、中央对齐的文案像书脊一样被托住。 ——
+      const qW = bb.width / 2
+      const qH = bb.height / 2
       const isH = (i: number) => NATIVE[i].w / NATIVE[i].h > 1
-
-      // 质量分（越高越好，满分 ~2^(丰富度)+……）：
-      //  ① 上/下、左/右 四象限内 “横竖混排”越充分越加分；
-      //  ② 四侧都不至于一边倒（每半都尽量≥几张）；
-      //  ③ 整体重心贴近板心，避免哪边超空 —— 排出来更像一张围绕文字的“贴纸墙”。
+      // —— 每张图按几何中心归到某个角落（四等分）；角内用位掩码记它含横/竖 ——
       const score = (cand: Tile[]) => {
-        let t = 0,
-          b = 0,
-          l = 0,
-          r = 0
-        let xc = 0
+        const bit: number[] = [0, 0, 0, 0] // 四角各一个掩码：1=含横,2=含竖（先填H）
+        let nPer: number[] = [0, 0, 0, 0]
         cand.forEach((tl, i) => {
           const ar = NATIVE[i].w / NATIVE[i].h
           const hh = tl.w / ar
           const cx = tl.x + tl.w / 2
           const cy = tl.y + hh / 2
-          const hz = isH(i)
-          if (cy < midV) t |= hz ? 1 : 2
-          else b |= hz ? 1 : 2
-          if (cx < midH) l |= hz ? 1 : 2
-          else r |= hz ? 1 : 2
-          xc += cx
+          let c = 0
+          if (cx < qW && cy < qH) c = 0
+          else if (cx >= qW && cy < qH) c = 1
+          else if (cx < qW && cy >= qH) c = 2
+          else c = 3
+          bit[c] |= isH(i) ? 1 : 2
+          nPer[c]++
         })
-        xc = xc / cand.length
-        const fullRect = t === 3 && b === 3 && l === 3 && r === 3 ? 2 : 0
-        // 让左右都不空、上下都不空：若任一方向缺另一侧会自动被扣分（用 mix 位数计）
-        const mixCount = [t, b, l, r].reduce((a, m) => a + (m === 3 ? 1 : 0), 0)
-        // 重心离板心越近分越高（用加权减小），量级让它作为微弱偏好而非硬性
-        return (
-          fullRect * 12 +
-          mixCount * 3 +
-          Math.max(0, 1 - Math.abs(xc - midH) / midH) * 2
-        )
+        // 4 角都要有最少一张 → 只把牌摊到四角的才留；四角各自越丰富分越高
+        let total = 0
+        for (let c = 0; c < 4; c++) {
+          if (nPer[c] === 0) return -100 // 某角空了 → 直接劣化
+          total += 3 + nPer[c] // 每角保底 3 分 + 每多一张+1
+          if (bit[c] === 3) total += 3 // 该角落横竖都有再多 3 分
+        }
+        // 让四角每张都不至于挤到边角顶出超大洞：照顾上下/左右对称的大方向（弱偏好）
+        const u = nPer[0] + nPer[1] // 上
+        const dwn = nPer[2] + nPer[3]
+        const L = nPer[0] + nPer[2]
+        const R = nPer[1] + nPer[3]
+        const sy = Math.min(u, dwn) >= 2 ? 1 : 0 // 上下各≥2
+        const sx = Math.min(L, R) >= 2 ? 1 : 0
+        return total + sy * 4 + sx * 4
       }
 
       let best: Tile[] = layoutWall(bb.width, bb.height, avoid, gap, 'wall-base')
       let bestS = -Infinity
-      for (let s = 0; s < 100; s++) {
+      for (let s = 0; s < 160; s++) {
         const cand = layoutWall(
           bb.width,
           bb.height,
           avoid,
           gap,
-          'wall-tight-' + s,
+          'wall-corner2-' + s,
         )
         const sc = score(cand)
         if (sc > bestS) {
           bestS = sc
           best = cand
-          if (sc >= 22) break
+          if (sc >= 42) break
         }
       }
       setTiles(best)
@@ -374,19 +374,19 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             className="flex flex-col items-center gap-3 text-center"
           >
             <span className="rounded-full bg-[rgba(255,252,245,0.62)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.42em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
-              初见 · 重逢 · 片刻永恒
+              快门手记 · 寄给岁月
             </span>
             <h2 className="max-w-[470px] text-[clamp(17px,3.05vw,25px)] font-black leading-snug tracking-wide text-[#241c10] [filter:drop-shadow(0_2px_12px_rgba(255,248,236,0.95))]">
-              把人的瞬间，
+              别急着说完再见，
               <br className="sm:hidden" />
-              拍成
+              先替岁月收藏一些
               <span className="bg-gradient-to-r from-[#0f9b8e] via-[#3b8fd9] to-[#b0395f] bg-clip-text text-transparent antialiased">
-                永恒的形状
+                无声的温柔
               </span>
             </h2>
             <p className="max-w-[400px] text-[13.5px] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              遇见、回首、欲言又止——我喜欢快门按下前那一秒的静默，
-              也喜欢照片里没有台词的戏。
+              风会把合上又打开的纪念册翻得哗哗响，
+              而我，只挑几页舍不得被吹走的留下。
             </p>
             <button
               onClick={onBegin}
