@@ -231,8 +231,9 @@ export default function PhotoIntroStage({ onBegin }: Props) {
     const frame = requestAnimationFrame(() => {
       const bb = board.getBoundingClientRect()
       const cb = center.getBoundingClientRect()
-      // 远离中心一点：允许相纸贴近文案，但保持合理（更紧凑的）呼吸空隙
-      const breath = Math.max(14, Math.round(bb.width * 0.019))
+      // 更贴近中央的“贴纸式”构图：呼吸空隙收得更紧，让围绕文案的一圈不留大空洞，
+      // 但仍保证任何相纸都不压到文字
+      const breath = Math.max(12, Math.round(bb.width * 0.014))
       const avoid: Rect = {
         x0: cb.left - bb.left - breath,
         x1: cb.right - bb.left + breath,
@@ -245,42 +246,58 @@ export default function PhotoIntroStage({ onBegin }: Props) {
       // —— 均衡构造：同一布局算法用多个随机种子各排一遍，挑一个“上下两半里横竖照片都
       // 齐、不一边倒”的解，从根上避免“横图全堆上方 / 竖图全贴下方”的扎堆 ——
       const midV = bb.height / 2
+      const midH = bb.width / 2
       const isH = (i: number) => NATIVE[i].w / NATIVE[i].h > 1
 
-      // 质量分：越高越好。两半各自要“同时含横和竖”(mix===3)，并尽量不让任一半剩≯大片空白
+      // 质量分（越高越好，满分 ~2^(丰富度)+……）：
+      //  ① 上/下、左/右 四象限内 “横竖混排”越充分越加分；
+      //  ② 四侧都不至于一边倒（每半都尽量≥几张）；
+      //  ③ 整体重心贴近板心，避免哪边超空 —— 排出来更像一张围绕文字的“贴纸墙”。
       const score = (cand: Tile[]) => {
-        let topN = 0,
-          botN = 0,
-          topMix = 0,
-          botMix = 0
+        let t = 0,
+          b = 0,
+          l = 0,
+          r = 0
+        let xc = 0
         cand.forEach((tl, i) => {
-          const hh = tl.w / (NATIVE[i].w / NATIVE[i].h)
+          const ar = NATIVE[i].w / NATIVE[i].h
+          const hh = tl.w / ar
+          const cx = tl.x + tl.w / 2
           const cy = tl.y + hh / 2
-          if (cy < midV) {
-            topN++
-            topMix |= isH(i) ? 1 : 2
-          } else {
-            botN++
-            botMix |= isH(i) ? 1 : 2
-          }
+          const hz = isH(i)
+          if (cy < midV) t |= hz ? 1 : 2
+          else b |= hz ? 1 : 2
+          if (cx < midH) l |= hz ? 1 : 2
+          else r |= hz ? 1 : 2
+          xc += cx
         })
-        const bothTop = topMix === 3 ? 1 : 0
-        const bothBot = botMix === 3 ? 1 : 0
-        // 两半都横竖齐 → 大加成分；再偏爱两半都至少有3张、避免极度偏置
-        const fill = Math.min(topN, botN) >= 3 ? 1 : 0
-        return bothTop * 8 + bothBot * 8 + fill * 4 + Math.min(topN, botN)
+        xc = xc / cand.length
+        const fullRect = t === 3 && b === 3 && l === 3 && r === 3 ? 2 : 0
+        // 让左右都不空、上下都不空：若任一方向缺另一侧会自动被扣分（用 mix 位数计）
+        const mixCount = [t, b, l, r].reduce((a, m) => a + (m === 3 ? 1 : 0), 0)
+        // 重心离板心越近分越高（用加权减小），量级让它作为微弱偏好而非硬性
+        return (
+          fullRect * 12 +
+          mixCount * 3 +
+          Math.max(0, 1 - Math.abs(xc - midH) / midH) * 2
+        )
       }
 
       let best: Tile[] = layoutWall(bb.width, bb.height, avoid, gap, 'wall-base')
-      let bestS = -1
-      for (let s = 0; s < 80; s++) {
-        const cand = layoutWall(bb.width, bb.height, avoid, gap, 'wall-bal-' + s)
+      let bestS = -Infinity
+      for (let s = 0; s < 100; s++) {
+        const cand = layoutWall(
+          bb.width,
+          bb.height,
+          avoid,
+          gap,
+          'wall-tight-' + s,
+        )
         const sc = score(cand)
         if (sc > bestS) {
           bestS = sc
           best = cand
-          // 满分(16)就有底了，直接停
-          if (score(cand) >= 16) break
+          if (sc >= 22) break
         }
       }
       setTiles(best)
@@ -307,10 +324,12 @@ export default function PhotoIntroStage({ onBegin }: Props) {
           return (
             <motion.figure
               key={SHOTS[i]}
-              className="pointer-events-none absolute"
+              className="group pointer-events-auto absolute cursor-zoom-in"
               style={{ left: tile.x, top: tile.y, width: tile.w }}
               initial={{ opacity: 0, scale: 0.6 }}
               animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ scale: 1.07 }}
+              whileTap={{ scale: 0.99 }}
               transition={{
                 delay: 0.04 + i * 0.045,
                 type: 'spring',
@@ -319,6 +338,16 @@ export default function PhotoIntroStage({ onBegin }: Props) {
                 mass: 0.7,
               }}
             >
+              {/* hover 微光：紧贴相纸边缘的暖色晕圈，随悬停淡入 */}
+              <span
+                aria-hidden
+                className="pointer-events-none absolute -inset-[3px] rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                style={{
+                  background:
+                    'radial-gradient(120% 120% at 50% 50%, rgba(255,190,90,0) 55%, rgba(255,150,70,0.55) 78%, rgba(255,210,120,0.55) 88%, rgba(255,200,120,0) 100%)',
+                  filter: 'blur(5px)',
+                }}
+              />
               <img
                 src={SHOTS[i]}
                 alt=""
@@ -327,7 +356,7 @@ export default function PhotoIntroStage({ onBegin }: Props) {
                 loading="lazy"
                 decoding="async"
                 draggable={false}
-                className="block h-auto w-full rounded-xl drop-shadow-[0_10px_16px_rgba(110,75,30,0.16)]"
+                className="relative block h-auto w-full rounded-xl drop-shadow-[0_10px_16px_rgba(110,75,30,0.16)] transition-[filter,transform] duration-300 ease-out group-hover:scale-[1.03] group-hover:brightness-110 group-hover:saturate-125 group-hover:drop-shadow-[0_0_16px_rgba(255,150,80,0.6)]"
               />
             </motion.figure>
           )
@@ -345,17 +374,19 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             className="flex flex-col items-center gap-3 text-center"
           >
             <span className="rounded-full bg-[rgba(255,252,245,0.62)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.42em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
-              人物 · 肖像 · 我目光所及
+              初见 · 重逢 · 片刻永恒
             </span>
-            <h2 className="max-w-[460px] text-[clamp(17px,3.1vw,25px)] font-black leading-snug tracking-wide text-[#241c10] [filter:drop-shadow(0_2px_12px_rgba(255,248,236,0.95))]">
-              我拍人，也拍
-              <span className="bg-gradient-to-r from-[#c0562a] via-[#d97a3a] to-[#b0395f] bg-clip-text text-transparent antialiased">
-                人眼底的光
+            <h2 className="max-w-[470px] text-[clamp(17px,3.05vw,25px)] font-black leading-snug tracking-wide text-[#241c10] [filter:drop-shadow(0_2px_12px_rgba(255,248,236,0.95))]">
+              把人的瞬间，
+              <br className="sm:hidden" />
+              拍成
+              <span className="bg-gradient-to-r from-[#0f9b8e] via-[#3b8fd9] to-[#b0395f] bg-clip-text text-transparent antialiased">
+                永恒的形状
               </span>
             </h2>
-            <p className="max-w-[390px] text-[13.5px] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              眉眼之间、笑意之外，藏着一整段人生。快门响起的瞬间，
-              平凡也被标成永恒。
+            <p className="max-w-[400px] text-[13.5px] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
+              遇见、回首、欲言又止——我喜欢快门按下前那一秒的静默，
+              也喜欢照片里没有台词的戏。
             </p>
             <button
               onClick={onBegin}
