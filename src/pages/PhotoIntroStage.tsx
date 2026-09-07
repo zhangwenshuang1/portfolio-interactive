@@ -103,39 +103,49 @@ function layoutWall(
   for (let i = 0; i < SHOT_COUNT; i++) {
     const ar = NATIVE[i].w / NATIVE[i].h
     const isPortrait = ar < 1
-    // 起始宽度：竖图约面板宽 10%、横图约 13%，都留了自然大小差
-    let w = Math.max(70, BW * (0.085 + rand() * 0.04) * (isPortrait ? 0.92 : 1.12))
-    const minW = Math.max(52, BW * 0.058)
+    // 起始尺寸：竖图宽约 16–19%板宽、横图约 20–25% —— 相对整块大墙明显放大，
+    // 让每张真正“当家”，而不是贴一首小签。
+    const w0 = BW * (isPortrait ? 0.165 + rand() * 0.035 : 0.2 + rand() * 0.05)
+    let w = w0
 
     let placed = false
-    for (let shrink = 0; shrink < 9 && !placed; shrink++) {
-      let h = w / ar
-      if (h > BH - 2 * pad) {
-        w = (BH - 2 * pad) * ar
+    // 从大到小试着放；多轮缩小仍尽量只到 w0 的 ~2/3 就接受，避免变成细长小签
+    for (let shrink = 0; shrink < 14 && !placed && w >= w0 * 0.6; shrink++) {
+      if (w > edgeMaxX - edgeMinX) w = edgeMaxX - edgeMinX
+      const h = w / ar
+      if (h > edgeMaxY - edgeMinY) {
+        w = (edgeMaxY - edgeMinY) * ar
         continue
       }
       // 在可放空间中随机采样，拒绝侵入留白或与已有重叠的候选
-      const tries = Math.max(900, Math.ceil((BW * BH) / (w * h) / 2) * 32)
+      const tries = Math.max(2400, Math.ceil((BW * BH) / (w * h)) * 48)
       for (let t = 0; t < tries && !placed; t++) {
-        // 随机把左上角放到整板中；若与 freeRect 相交则丢弃
         const x = edgeMinX + rand() * (edgeMaxX - edgeMinX - w)
         const y = edgeMinY + rand() * (edgeMaxY - edgeMinY - h)
-        if (x + w > edgeMaxX || y + h > edgeMaxY) continue
         if (inFree(x, y, x + w, y + h)) continue
         if (collides(x, y, x + w, y + h)) continue
         occ.push({ l: x - gap, t: y - gap, r: x + w + gap, b: y + h + gap })
         out.push({ x: Math.round(x), y: Math.round(y), w: Math.round(w) })
         placed = true
       }
-      if (!placed) w = w * 0.9 // 放不下：缩窄半档再铺
+      if (!placed) w *= 0.94 // 放不下：小幅减宽后继续撒
     }
 
     if (!placed) {
-      // 罕见兜底 —— 沿右侧立一列极窄，绝不触碰中央文字亦不超出板
-      w = minW
+      // 兜底 —— 仍争取更大的尺寸放到右侧纵列，而非缩小到看不清
+      w = Math.max(w0 * 0.7, w)
       const hf = w / ar
+      if (hf > edgeMaxY - edgeMinY) w = (edgeMaxY - edgeMinY) * ar
       const cx = Math.max(edgeMinX, freeRect.x1 + gap)
-      const cy = edgeMinY + Math.min(edgeMaxY - hf - edgeMinY, rand() * (BH - 2 * pad))
+      const tryList = [0.2, 0.6, 0.85, 0.4].map((k) => k * (edgeMaxX - w - cx) + cx)
+      let cy = edgeMinY
+      for (const dx of tryList) {
+        const candY = edgeMinY + Math.min(edgeMaxY - w / ar - edgeMinY, rand() * (BH - 2 * pad))
+        if (!collides(dx, candY, dx + w, candY + w / ar) && !inFree(dx, candY, dx + w, candY + w / ar)) {
+          cy = candY
+          break
+        }
+      }
       out.push({ x: Math.round(cx), y: Math.round(cy), w: Math.round(w) })
     }
   }
