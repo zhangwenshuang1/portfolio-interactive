@@ -16,11 +16,11 @@ import { useRef, useState, useLayoutEffect } from 'react'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const pad = (n: number) => String(n).padStart(3, '0')
-const SHOT_COUNT = 9
+const SHOT_COUNT = 8
 const SHOTS = Array.from({ length: SHOT_COUNT }, (_, i) => `/intro-thumbs/${pad(i + 1)}.jpg`)
 
 // 每张的原始宽高（仅用于让 <img> 保持原始比例；显示层永远 h-auto，零裁切零拉伸）
-// 顺序即桌面「拍照」文件夹顺序（已删掉两张）
+// 顺序即桌面「拍照」文件夹顺序（现已删到剩 8 张）
 const NATIVE: Array<{ w: number; h: number }> = [
   { w: 2133, h: 1600 }, // 001 横 4:3
   { w: 1212, h: 810 }, //  002 横 3:2
@@ -28,9 +28,8 @@ const NATIVE: Array<{ w: number; h: number }> = [
   { w: 3072, h: 4096 }, // 004 竖 3:4
   { w: 6000, h: 4000 }, // 005 横 3:2
   { w: 3024, h: 4032 }, // 006 竖 3:4
-  { w: 4032, h: 3024 }, // 007 横 4:3
-  { w: 2268, h: 4032 }, // 008 竖 9:16（窄长）
-  { w: 2448, h: 3264 }, // 009 竖 3:4
+  { w: 2268, h: 4032 }, // 007 竖 9:16（窄长）
+  { w: 2448, h: 3264 }, // 008 竖 3:4
 ]
 
 /** 左上锚点 + 像素宽（px）。
