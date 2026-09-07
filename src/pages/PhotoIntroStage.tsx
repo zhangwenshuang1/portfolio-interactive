@@ -246,9 +246,9 @@ export default function PhotoIntroStage({ onBegin }: Props) {
       // 齐、不一边倒”的解，从根上避免“横图全堆上方 / 竖图全贴下方”的扎堆 ——
       const midV = bb.height / 2
       const isH = (i: number) => NATIVE[i].w / NATIVE[i].h > 1
-      let picked: Tile[] = layoutWall(bb.width, bb.height, avoid, gap, 'wall-base')
-      for (let s = 0; s < 80; s++) {
-        const cand = layoutWall(bb.width, bb.height, avoid, gap, 'wall-bal-' + s)
+
+      // 质量分：越高越好。两半各自要“同时含横和竖”(mix===3)，并尽量不让任一半剩≯大片空白
+      const score = (cand: Tile[]) => {
         let topN = 0,
           botN = 0,
           topMix = 0,
@@ -258,21 +258,32 @@ export default function PhotoIntroStage({ onBegin }: Props) {
           const cy = tl.y + hh / 2
           if (cy < midV) {
             topN++
-            if (isH(i)) topMix |= 1
-            else topMix |= 2
+            topMix |= isH(i) ? 1 : 2
           } else {
             botN++
-            if (isH(i)) botMix |= 1
-            else botMix |= 2
+            botMix |= isH(i) ? 1 : 2
           }
         })
-        // 达标：两半各自同时有横图也有竖图，且任一半都不至于过头
-        if (topN >= 3 && botN >= 3 && topMix === 3 && botMix === 3) {
-          picked = cand
-          break
+        const bothTop = topMix === 3 ? 1 : 0
+        const bothBot = botMix === 3 ? 1 : 0
+        // 两半都横竖齐 → 大加成分；再偏爱两半都至少有3张、避免极度偏置
+        const fill = Math.min(topN, botN) >= 3 ? 1 : 0
+        return bothTop * 8 + bothBot * 8 + fill * 4 + Math.min(topN, botN)
+      }
+
+      let best: Tile[] = layoutWall(bb.width, bb.height, avoid, gap, 'wall-base')
+      let bestS = -1
+      for (let s = 0; s < 80; s++) {
+        const cand = layoutWall(bb.width, bb.height, avoid, gap, 'wall-bal-' + s)
+        const sc = score(cand)
+        if (sc > bestS) {
+          bestS = sc
+          best = cand
+          // 满分(16)就有底了，直接停
+          if (score(cand) >= 16) break
         }
       }
-      setTiles(picked)
+      setTiles(best)
     })
     return () => cancelAnimationFrame(frame)
   }, [])
