@@ -20,7 +20,7 @@ const pad = (n: number) => String(n).padStart(3, '0')
 // —— 幕后照片素材库 ——
 // 每张缩略图导入时已压到最长边 900px 并依次命名 001..014，宽高遵循原图比例（零裁切）。
 // 顺序对应桌面「综艺」文件夹里照片的按名排序；编号固定，之后你提到的“第几张”都以此为准。
-// 目前版面先展示其中的 10 张（见 SHOWN = 001..010），末尾的 011–014 备用轮换。
+// 目前版面先展示其中的 11 张（见 SHOWN = 001..011），末尾的 012–014 备用轮换。
 const THUMBS = Array.from({ length: 14 }, (_, i) => ({
   src: `/ent-bts/thumbs/${pad(i + 1)}.jpg`,
   w: 0,
@@ -44,7 +44,7 @@ const PHYSICAL: Array<[number, number]> = [
   [675, 900], //  014 竖
 ]
 // 本版稳定展示的张数（在 001–014 中取前 SHOWN_AB 张，编号可见且固定）
-const SHOWN = 10
+const SHOWN = 11
 const SHOTS = THUMBS.slice(0, SHOWN).map((t) => t.src)
 const NATIVE: Array<{ w: number; h: number }> = PHYSICAL.slice(0, SHOWN).map(
   ([w, h]) => ({ w, h }),
