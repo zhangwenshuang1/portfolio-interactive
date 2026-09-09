@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { usePuzzleStore } from '../store/puzzleStore'
 import PhotographyCarouselPanel from './PhotographyCarouselPanel'
+import EntertainmentCarouselPanel from './EntertainmentCarouselPanel'
 
 interface DetailPageProps {
   puzzleId: string
@@ -18,6 +19,11 @@ export default function DetailPage({ puzzleId, onClose }: DetailPageProps) {
   // 摄影块：不用通用模板，直接进入“作品集封面流”
   if (puzzle.category === 'photography') {
     return <PhotographyCarouselPanel puzzle={puzzle} onClose={onClose} />
+  }
+
+  // 综艺实习（DO）：一站到底舞台内外 → 中央播放宣传片 + 四周幕后照片
+  if (puzzle.category === 'entertainment') {
+    return <EntertainmentCarouselPanel puzzle={puzzle} onClose={onClose} />
   }
 
   const handleClose = () => {
