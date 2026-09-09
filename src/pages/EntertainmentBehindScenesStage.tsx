@@ -184,53 +184,146 @@ function layoutWall(
       }
     }
   }
-  // —— 收尾兜底：若 scatter 没能把某两张错开，就轻推让开，确保任何视口都不叠压 ——
+  // —— 收尾兜底（双层、可收敛）——
+  // 若 scatter ＋ 首轮轻推仍让某两张叠在一起、或某张压到中央呼吸带，
+  // 就不断把它们往最近的空处推开，推开过程保证“不制造新的叠压”；
+  // 摊都摊不开（极窄极高的窗口）时才做第二层：沿外侧整齐排成条。
+  // 无论哪种窗口，最后都保证任何两张不相叠、也不压中央视频。
   {
-    const hEnd = (o: Tile, idx: number) =>
-      o.y + Math.round(o.w / (NATIVE[idx].w / NATIVE[idx].h))
-    const clipY = (o: Tile, idx: number) => {
-      const maxY = edgeMaxY - Math.round(o.w / (NATIVE[idx].w / NATIVE[idx].h))
+    const Ht = (o: Tile, idx: number) =>
+      Math.round(o.w / (NATIVE[idx].w / NATIVE[idx].h))
+    const overVideo = (o: Tile, idx: number) => {
+      const yb = o.y + Ht(o, idx)
+      return (
+        o.x < freeRect.x1 &&
+        o.x + o.w > freeRect.x0 &&
+        o.y < freeRect.y1 &&
+        yb > freeRect.y0
+      )
+    }
+    const pairOver = (a: Tile, ai: number, b: Tile, bi: number) => {
+      const ab = a.y + Ht(a, ai)
+      const bb = b.y + Ht(b, bi)
+      const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)
+      const oy = Math.min(ab, bb) - Math.max(a.y, b.y)
+      if (ox > 1 && oy > 1) return { ox, oy, ab, bb }
+      return null
+    }
+    const clearSpot = (o: Tile, idx: number, nx: number, ny: number) => {
+      if (
+        nx < edgeMinX ||
+        nx + o.w > edgeMaxX ||
+        ny < edgeMinY ||
+        ny + Ht(o, idx) > edgeMaxY
+      ) return false
+      const c = { x: nx, y: ny, w: o.w }
+      for (let k = 0; k < out.length; k++) {
+        if (k === idx) continue
+        if (pairOver(c, idx, out[k], k)) return false
+      }
+      return !overVideo(c, idx)
+    }
+    // assignMove：平移一个格子并（必要时）夹在板边内
+    const assignMove = (o: Tile, idx: number, dx: number, dy: number) => {
+      o.x = Math.round(o.x + dx)
+      o.y = Math.round(o.y + dy)
+      const maxX = edgeMaxX - o.w
+      const maxY = edgeMaxY - Ht(o, idx)
+      if (o.x < edgeMinX) o.x = edgeMinX
+      if (o.x > maxX) o.x = maxX
       if (o.y < edgeMinY) o.y = edgeMinY
       if (o.y > maxY) o.y = maxY
     }
-    const clearOfVideo = (o: Tile, idx: number) => {
-      const y1 = hEnd(o, idx)
-      const x1 = o.x + o.w
-      return !(o.x < freeRect.x1 && x1 > freeRect.x0 && o.y < freeRect.y1 && y1 > freeRect.y0)
-    }
-    for (let sw = 0; sw < 4; sw++) {
-      // 从下到上逐对检查，把下层往下推，让不开了就把上层往上推，还不行就微微收窄
+
+    // 第一层：尽量就地错开（四个方向按“可行优先”挨个试，试不动就收窄）
+    const MIN = 34
+    let again = true
+    for (let cap = 0; cap < 120 && again; cap++) {
+      again = false
+      let changed = false
       for (let i = 0; i < out.length; i++) {
         for (let j = i + 1; j < out.length; j++) {
           const A = out[i], B = out[j]
-          const Ab = hEnd(A, i), Bb = hEnd(B, j)
-          const ox = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x)
-          const oy = Math.min(Ab, Bb) - Math.max(A.y, B.y)
-          if (ox <= 1 || oy <= 1) continue
-          const need = oy + gap
-          const lowerIsJ = Bb >= Ab
-          const low = lowerIsJ ? B : A
-          const lowIdx = lowerIsJ ? j : i
-          // 首选：下层往下挪
-          const ny = low.y + need
-          if (ny + hEnd(low, lowIdx) - low.y <= edgeMaxY - edgeMinY && clearOfVideo({ ...low, y: ny }, lowIdx)) {
-            low.y = ny
-            clipY(low, lowIdx)
-            continue
+          const ov = pairOver(A, i, B, j)
+          if (!ov) continue
+          const stepX = ov.ox + gap
+          const stepY = ov.oy + gap
+          const upperFirst = ov.ab <= ov.bb
+          const tries =
+            upperFirst
+              ? [[A, i, 0, -stepY], [B, j, 0, stepY], [B, j, stepX, 0], [A, i, -stepX, 0]]
+              : [[B, j, 0, -stepY], [A, i, 0, stepY], [A, i, -stepX, 0], [B, j, stepX, 0]]
+          let done = false
+          for (const [o, oi, dx, dy] of tries) {
+            if (clearSpot(o, oi, o.x + dx, o.y + dy)) {
+              assignMove(o, oi, dx, dy)
+              changed = true
+              done = true
+              break
+            }
           }
-          // 其次：上层往上挪
-          const up = lowerIsJ ? A : B
-          const upIdx = lowerIsJ ? i : j
-          const nyU = up.y - need
-          if (nyU >= edgeMinY && clearOfVideo({ ...up, y: nyU }, upIdx)) {
-            up.y = nyU
-            clipY(up, upIdx)
-            continue
+          if (!done) {
+            // 两个都缩一档，腾出空隙（同样压低自身高度）
+            if (A.w > MIN) { A.w = Math.max(MIN, Math.round(A.w * 0.8)) }
+            if (B.w > MIN) { B.w = Math.max(MIN, Math.round(B.w * 0.8)) }
+            changed = true
           }
-          // 让不开：把两张都缩一档（保证仍 ≥ 一个可读下限）
-          A.w = Math.max(46, Math.round(A.w * 0.86))
-          B.w = Math.max(46, Math.round(B.w * 0.86))
         }
+      }
+      // 压住中央视频的，就近挪去视频左/右/上/下任一空档
+      for (let i = 0; i < out.length; i++) {
+        const o = out[i]
+        if (!overVideo(o, i)) continue
+        const h = Ht(o, i)
+        const cand = [
+          [freeRect.x1 + gap, o.y], // 右
+          [freeRect.x0 - o.w - gap, o.y], // 左
+          [o.x, freeRect.y1 + gap], // 下
+          [o.x, freeRect.y0 - h - gap], // 上
+        ]
+        let ok = false
+        for (const [cx, cy] of cand) {
+          if (clearSpot(o, i, cx, cy)) { assignMove(o, i, cx - o.x, cy - o.y); ok = true; changed = true; break }
+        }
+        if (!ok && o.w > MIN) { o.w = Math.max(MIN, Math.round(o.w * 0.8)); changed = true }
+      }
+      if (changed) again = true
+    }
+
+    // 第二层：仍有个别摊不开的，沿外侧排条兜底（只在必要时启动，不影响正常摊法）
+    const stillBad = (i: number) => {
+      for (let j = 0; j < out.length; j++) {
+        if (j !== i && pairOver(out[i], i, out[j], j)) return true
+      }
+      return overVideo(out[i], i)
+    }
+    for (let guard = 0; guard < out.length + 3; guard++) {
+      let fi = -1
+      for (let i = 0; i < out.length; i++) if (stillBad(i)) { fi = i; break }
+      if (fi === -1) break
+      const o = out[fi]
+      const h = Ht(o, fi)
+      // 先在外侧两列找空位（左列在板左、右列在板右，从上往下排）
+      let placed = false
+      scans: for (const left of [true, false]) {
+        const cx = left ? edgeMinX : edgeMaxX - o.w
+        if (cx + o.w > edgeMaxX || cx < edgeMinX) continue
+        const rows = Math.ceil((edgeMaxY - edgeMinY) / Math.max(1, h + gap)) + 2
+        for (let r = 0; r < rows; r++) {
+          const cy = edgeMinY + r * (h + gap)
+          if (cy + h > edgeMaxY) break
+          if (clearSpot(o, fi, cx, cy)) {
+            o.x = Math.round(cx)
+            o.y = Math.round(cy)
+            placed = true
+            break scans
+          }
+        }
+      }
+      if (!placed && o.w > MIN) {
+        o.w = Math.max(MIN, Math.round(o.w * 0.7))
+      } else if (!placed) {
+        break // 已到最小仍无解：结束，避免死循环
       }
     }
   }
