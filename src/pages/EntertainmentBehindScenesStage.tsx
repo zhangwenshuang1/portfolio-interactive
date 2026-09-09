@@ -63,129 +63,95 @@ interface Rect {
   y1: number
 }
 
-/** 可复现伪随机：同一尺寸下照片位置稳定，不会每次重排 */
-function seededRand(seedKey: string) {
-  let h = 2166136261
-  for (let i = 0; i < seedKey.length; i++) {
-    h ^= seedKey.charCodeAt(i)
-    h = Math.imul(h, 16777619)
-  }
-  return () => {
-    h += 0x6d2b79f5
-    h |= 0
-    let t = Math.imul(h ^ (h >>> 15), h | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
-}
-
 /**
- * 把 SHOWN 张照片彼此不重叠地撒到面板空处（绕开中央视频区）。
+ * 把 SHOWN 张照片排成「左右对称、围住中央视频」的两栏：
+ *  照片左右均分，各自从贴近外侧墙的一列开始向下堆叠，满了再向内开新列；
+ *  列宽随窗口自适应，保证不与中央视频重叠、不被裁出画面，也尽量左右均衡。
+ *  不使用随机 —— 同一宽度下每次打开都是整齐统一的排布，不再“挤在一边”。
  */
-function layoutWall(
-  BW: number,
-  BH: number,
-  freeRect: Rect,
-  gap: number,
-  seedKey: string,
-): Tile[] {
-  const rand = seededRand(seedKey)
-  const padOut = Math.max(10, Math.round(BW * 0.012))
-  const out: Tile[] = []
+function layoutWall(BW: number, BH: number, freeRect: Rect, gap: number): Tile[] {
+  const padOut = Math.max(10, Math.round(BW * 0.015))
+  const g = Math.max(gap, 10)
+  const splitL = Math.ceil(SHOWN / 2)
 
-  const edgeMinX = padOut
-  const edgeMaxX = BW - padOut
-  const edgeMinY = padOut
-  const edgeMaxY = BH - padOut
+  /** 排一栏。lo/hi 为连续原图序号；nearLeft=true 靠左墙、false 靠右墙。 */
+  const place = (lo: number, hi: number, nearLeft: boolean): Tile[] => {
+    const items = hi - lo + 1
+    if (items <= 0) return []
 
-  const occ: Array<{ l: number; t: number; r: number; b: number }> = []
+    const availTop = padOut
+    const availBot = BH - padOut
+    const availH = Math.max(1, availBot - availTop)
 
-  const inFree = (x0: number, y0: number, x1: number, y1: number) =>
-    x0 < freeRect.x1 && x1 > freeRect.x0 && y0 < freeRect.y1 && y1 > freeRect.y0
-  const collides = (x0: number, y0: number, x1: number, y1: number) =>
-    occ.some(
-      (q) =>
-        x0 - gap < q.r && x1 + gap > q.l && y0 - gap < q.b && y1 + gap > q.t,
-    )
+    // 本栏可用的横向区间
+    let xLo: number, xHi: number
+    if (nearLeft) {
+      xLo = padOut
+      xHi = Math.max(padOut, Math.min(freeRect.x0 - g, BW - padOut))
+    } else {
+      xLo = Math.min(BW - padOut, Math.max(freeRect.x1 + g, padOut))
+      xHi = BW - padOut
+    }
+    if (xHi - xLo < 44) {
+      if (nearLeft) xHi = Math.max(xLo + 44, padOut)
+      else xLo = Math.min(xHi - 44, BW - padOut)
+    }
+    const bodyW = Math.max(44, xHi - xLo)
+    const colGap = g
 
-  for (let i = 0; i < SHOWN; i++) {
-    const ar = NATIVE[i].w / NATIVE[i].h
-    const isPortrait = ar < 1
-    // 张数变多后把基准纸幅调小一些：竖图约占板宽 15–21%、横图约占 17–23%，
-    // 让 10 张尽量摊满四周空白又保持中央视频仍是绝对主角
-    const w0 = BW * (isPortrait ? 0.15 + rand() * 0.06 : 0.17 + rand() * 0.06)
-    let w = w0
-    const minW = Math.max(52, w0 * (isPortrait ? 0.45 : 0.52))
-
-    let placed = false
-    for (let shrink = 0; shrink < 30 && !placed; shrink++) {
-      if (w < minW) w = minW
-      if (w > edgeMaxX - edgeMinX) w = edgeMaxX - edgeMinX
-      const h = w / ar
-      if (h > edgeMaxY - edgeMinY) {
-        w = (edgeMaxY - edgeMinY) * ar
-        continue
+    // 从少到多选列数，令最高的竖柱不超高
+    let bestCols = 1
+    for (let cols = 1; cols <= items; cols++) {
+      const cw = Math.max(1, (bodyW - (cols - 1) * colGap) / cols)
+      const heights = new Array(cols).fill(0)
+      for (let j = 0; j < items; j++) {
+        const c = j % cols
+        const n = lo + j
+        heights[c] += cw / (NATIVE[n].w / NATIVE[n].h) + colGap
       }
-      const tries = 3200 + Math.ceil((BW * BH) / (w * h)) * 60
-      for (let t = 0; t < tries && !placed; t++) {
-        const x = edgeMinX + rand() * (edgeMaxX - edgeMinX - w)
-        const y = edgeMinY + rand() * (edgeMaxY - edgeMinY - h)
-        if (inFree(x, y, x + w, y + h)) continue
-        if (collides(x, y, x + w, y + h)) continue
-        occ.push({ l: x - gap, t: y - gap, r: x + w + gap, b: y + h + gap })
-        out.push({ x: Math.round(x), y: Math.round(y), w: Math.round(w) })
-        placed = true
+      let tallest = 0
+      for (const v of heights) tallest = Math.max(tallest, v)
+      if (tallest <= availH + colGap || cols === items) {
+        bestCols = cols
         break
       }
-      if (!placed) w *= 0.94
+    }
+    let colW = Math.max(46, (bodyW - (bestCols - 1) * colGap) / bestCols)
+    for (let k = 0; k < 60; k++) {
+      const heights = new Array(bestCols).fill(0)
+      for (let j = 0; j < items; j++) {
+        const c = j % bestCols
+        const n = lo + j
+        heights[c] += colW / (NATIVE[n].w / NATIVE[n].h) + colGap
+      }
+      let tallest = 0
+      for (const v of heights) tallest = Math.max(tallest, v)
+      if (tallest <= availH + colGap) break
+      colW *= 0.92
     }
 
-    if (!placed) {
-      let w2 = minW
-      let found = false
-      for (let deg = 0; deg < 8 && !found; deg++) {
-        w2 = Math.max(BW * 0.1, Math.round(w2 * 0.9))
-        if (w2 > edgeMaxX - edgeMinX) w2 = edgeMaxX - edgeMinX
-        const h2 = w2 / ar
-        if (h2 > edgeMaxY - edgeMinY) continue
-        const tries = 4200
-        for (let t = 0; t < tries && !found; t++) {
-          const x = edgeMinX + rand() * (edgeMaxX - edgeMinX - w2)
-          const y = edgeMinY + rand() * (edgeMaxY - edgeMinY - h2)
-          if (inFree(x, y, x + w2, y + h2)) continue
-          if (collides(x, y, x + w2, y + h2)) continue
-          occ.push({ l: x - gap, t: y - gap, r: x + w2 + gap, b: y + h2 + gap })
-          out.push({ x: Math.round(x), y: Math.round(y), w: Math.round(w2) })
-          placed = true
-          found = true
-        }
-      }
-      if (!found) {
-        // 逐左移找可放坐标（极端兜底，几乎不会走到）
-        const bw = Math.max(Math.max(42, Math.round(BW * 0.08)), minW * 0.5)
-        const bh = bw / ar
-        let placedEdge = false
-        for (let k = 0; k < edgeMaxX - edgeMinX - bw && !placedEdge; k++) {
-          const x0c = edgeMinX + k
-          const y0c = edgeMinY
-          if (
-            y0c + bh <= edgeMaxY &&
-            !inFree(x0c, y0c, x0c + bw, y0c + bh) &&
-            !collides(x0c, y0c, x0c + bw, y0c + bh)
-          ) {
-            occ.push({ l: x0c - gap, t: y0c - gap, r: x0c + bw + gap, b: y0c + bh + gap })
-            out.push({ x: Math.round(x0c), y: Math.round(y0c), w: Math.round(bw) })
-            placedEdge = true
-          }
-        }
-        if (!placedEdge) {
-          out.push({ x: edgeMinX, y: Math.max(padOut, edgeMaxY - bh), w: Math.round(bw) })
-        }
-      }
+    const cursorY = new Array(bestCols).fill(availTop)
+    const out = []
+    for (let j = 0; j < items; j++) {
+      const c = j % bestCols
+      const n = lo + j
+      const ar = NATIVE[n].w / NATIVE[n].h
+      const leftX = nearLeft
+        ? xLo + c * (colW + colGap)
+        : xHi - colW - c * (colW + colGap)
+      const y = Math.round(cursorY[c])
+      cursorY[c] += colW / ar + colGap
+      out.push({ x: Math.round(leftX), y, w: Math.round(colW) })
     }
+    return out
   }
-  return out
+
+  return [
+    ...place(0, splitL - 1, true),
+    ...place(splitL, SHOWN - 1, false),
+  ]
 }
+
 
 interface StageProps {
   onClose: () => void
@@ -204,9 +170,11 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
     const board = boxRef.current
     const center = videoRef.current
     if (!board || !center) return
-    const frame = requestAnimationFrame(() => {
+    let raf = 0
+    const compute = () => {
       const bb = board.getBoundingClientRect()
       const cb = center.getBoundingClientRect()
+      if (!bb.width || !bb.height) return
       const breath = Math.max(18, Math.round(bb.width * 0.02))
       const avoid: Rect = {
         x0: cb.left - bb.left - breath,
@@ -215,10 +183,21 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
         y1: cb.bottom - bb.top + breath,
       }
       const gap = Math.max(16, Math.round(bb.width * 0.014))
-      const cand = layoutWall(bb.width, bb.height, avoid, gap, 'zongyi-stage-1')
-      setTiles(cand)
-    })
-    return () => cancelAnimationFrame(frame)
+      setTiles(layoutWall(bb.width, bb.height, avoid, gap))
+    }
+    const schedule = () => {
+      if (raf) cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(compute)
+    }
+    compute()
+    const ro = new ResizeObserver(schedule)
+    ro.observe(board)
+    window.addEventListener('resize', schedule)
+    return () => {
+      ro.disconnect()
+      cancelAnimationFrame(raf)
+      window.removeEventListener('resize', schedule)
+    }
   }, [])
 
   return (
