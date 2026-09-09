@@ -184,6 +184,57 @@ function layoutWall(
       }
     }
   }
+  // —— 收尾兜底：若 scatter 没能把某两张错开，就轻推让开，确保任何视口都不叠压 ——
+  {
+    const hEnd = (o: Tile, idx: number) =>
+      o.y + Math.round(o.w / (NATIVE[idx].w / NATIVE[idx].h))
+    const clipY = (o: Tile, idx: number) => {
+      const maxY = edgeMaxY - Math.round(o.w / (NATIVE[idx].w / NATIVE[idx].h))
+      if (o.y < edgeMinY) o.y = edgeMinY
+      if (o.y > maxY) o.y = maxY
+    }
+    const clearOfVideo = (o: Tile, idx: number) => {
+      const y1 = hEnd(o, idx)
+      const x1 = o.x + o.w
+      return !(o.x < freeRect.x1 && x1 > freeRect.x0 && o.y < freeRect.y1 && y1 > freeRect.y0)
+    }
+    for (let sw = 0; sw < 4; sw++) {
+      // 从下到上逐对检查，把下层往下推，让不开了就把上层往上推，还不行就微微收窄
+      for (let i = 0; i < out.length; i++) {
+        for (let j = i + 1; j < out.length; j++) {
+          const A = out[i], B = out[j]
+          const Ab = hEnd(A, i), Bb = hEnd(B, j)
+          const ox = Math.min(A.x + A.w, B.x + B.w) - Math.max(A.x, B.x)
+          const oy = Math.min(Ab, Bb) - Math.max(A.y, B.y)
+          if (ox <= 1 || oy <= 1) continue
+          const need = oy + gap
+          const lowerIsJ = Bb >= Ab
+          const low = lowerIsJ ? B : A
+          const lowIdx = lowerIsJ ? j : i
+          // 首选：下层往下挪
+          const ny = low.y + need
+          if (ny + hEnd(low, lowIdx) - low.y <= edgeMaxY - edgeMinY && clearOfVideo({ ...low, y: ny }, lowIdx)) {
+            low.y = ny
+            clipY(low, lowIdx)
+            continue
+          }
+          // 其次：上层往上挪
+          const up = lowerIsJ ? A : B
+          const upIdx = lowerIsJ ? i : j
+          const nyU = up.y - need
+          if (nyU >= edgeMinY && clearOfVideo({ ...up, y: nyU }, upIdx)) {
+            up.y = nyU
+            clipY(up, upIdx)
+            continue
+          }
+          // 让不开：把两张都缩一档（保证仍 ≥ 一个可读下限）
+          A.w = Math.max(46, Math.round(A.w * 0.86))
+          B.w = Math.max(46, Math.round(B.w * 0.86))
+        }
+      }
+    }
+  }
+
   return out
 }
 
