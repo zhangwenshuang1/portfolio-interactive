@@ -6,7 +6,7 @@ import { useRef, useState, useLayoutEffect, useCallback } from 'react'
 //
 // 视觉语法：先看见「节目」，再发现「幕后」，最后意识到「这些幕后记录来自我」。
 //   • 中央是一台正在自动播放的《一站到底》宣传片（节目 / THE SHOW）；
-//   • 四周随播放逐渐浮现 7 张本人参与制作期间拍摄的幕后照片（幕后 / ON SET）；
+//   • 四周随播放逐渐浮现幕后照片（幕后 / ON SET）；
 //   • 每张相纸悬停会浮起一圈舞台侧光的霓虹光晕（你在人群里认出“我的机位”）。
 //
 // 这里刻意做了三件与摄影墙不同的事以服务另一种叙事：
@@ -16,32 +16,39 @@ import { useRef, useState, useLayoutEffect, useCallback } from 'react'
 // ─────────────────────────────────────────────────────────────────────────────
 
 const pad = (n: number) => String(n).padStart(3, '0')
-const SHOT_COUNT = 7
-const SHOTS = Array.from({ length: SHOT_COUNT }, (_, i) => `/ent-bts/thumbs/${pad(i + 1)}.jpg`)
 
-// 每张缩略图在导入时已压到最长边 1000px，宽高遵循原始比例（绝无裁切/拉伸）。
-// 顺序 = 桌面「综艺」文件夹排序后的幕后图（52→58）。
-const NATIVE: Array<{ w: number; h: number }> = [
-  { w: 750, h: 1000 }, //  001 竖 3:4
-  { w: 751, h: 1000 }, //  002 竖 3:4
-  { w: 750, h: 1000 }, //  003 竖 3:4
-  { w: 1000, h: 667 }, // 004 横 3:2
-  { w: 750, h: 1000 }, //  005 竖 3:4
-  { w: 750, h: 1000 }, //  006 竖 3:4
-  { w: 750, h: 1000 }, //  007 竖 3:4
+// —— 幕后照片素材库 ——
+// 每张缩略图导入时已压到最长边 900px 并依次命名 001..014，宽高遵循原图比例（零裁切）。
+// 顺序对应桌面「综艺」文件夹里照片的按名排序；编号固定，之后你提到的“第几张”都以此为准。
+// 目前版面先展示其中的 10 张（见 SHOWN = 001..010），末尾的 011–014 备用轮换。
+const THUMBS = Array.from({ length: 14 }, (_, i) => ({
+  src: `/ent-bts/thumbs/${pad(i + 1)}.jpg`,
+  w: 0,
+  h: 0,
+}))
+// 每张缩略图的真实宽高（服务器上已生成的 001–014）：
+const PHYSICAL: Array<[number, number]> = [
+  [675, 900], //  001 竖
+  [676, 900], //  002 竖
+  [675, 900], //  003 竖
+  [900, 600], //  004 横 3:2
+  [675, 900], //  005 竖
+  [675, 900], //  006 竖
+  [675, 900], //  007 竖
+  [900, 675], //  008 横 4:3
+  [900, 675], //  009 横 4:3
+  [675, 900], //  010 竖
+  [900, 506], //  011 横 16:9
+  [900, 675], //  012 横 4:3
+  [675, 900], //  013 竖
+  [675, 900], //  014 竖
 ]
-
-// 每张幕后照片的画面说明（占位文案，之后可改成自己的话）
-// —— 一张局促侧光、一个后台角落，都曾是我的机位。
-const CAPTIONS = [
-  '我的第一张工作证',
-  '彩排时昏暗的灯光架下',
-  '"把这一格拍给伙伴看"',
-  '演播厅外的傍晚',
-  '嘉宾微访谈的空档',
-  '道具间的忙碌五分钟',
-  '直播结束后的大合影',
-]
+// 本版稳定展示的张数（在 001–014 中取前 SHOWN_AB 张，编号可见且固定）
+const SHOWN = 10
+const SHOTS = THUMBS.slice(0, SHOWN).map((t) => t.src)
+const NATIVE: Array<{ w: number; h: number }> = PHYSICAL.slice(0, SHOWN).map(
+  ([w, h]) => ({ w, h }),
+)
 
 /** 左上锚点 + 像素宽（px）。高交给 <img> + h-auto 自然推算 */
 interface Tile {
@@ -73,7 +80,7 @@ function seededRand(seedKey: string) {
 }
 
 /**
- * 把 SHOT_COUNT 张照片彼此不重叠地撒到面板空处（绕开中央视频区）。
+ * 把 SHOWN 张照片彼此不重叠地撒到面板空处（绕开中央视频区）。
  */
 function layoutWall(
   BW: number,
@@ -101,11 +108,12 @@ function layoutWall(
         x0 - gap < q.r && x1 + gap > q.l && y0 - gap < q.b && y1 + gap > q.t,
     )
 
-  for (let i = 0; i < SHOT_COUNT; i++) {
+  for (let i = 0; i < SHOWN; i++) {
     const ar = NATIVE[i].w / NATIVE[i].h
     const isPortrait = ar < 1
-    // 竖图约占 20–26% 板宽、横图约占 24–29%（稍微小一点，让中央视频仍是绝对主角）
-    const w0 = BW * (isPortrait ? 0.2 + rand() * 0.06 : 0.24 + rand() * 0.05)
+    // 张数变多后把基准纸幅调小一些：竖图约占板宽 15–21%、横图约占 17–23%，
+    // 让 10 张尽量摊满四周空白又保持中央视频仍是绝对主角
+    const w0 = BW * (isPortrait ? 0.15 + rand() * 0.06 : 0.17 + rand() * 0.06)
     let w = w0
     const minW = Math.max(52, w0 * (isPortrait ? 0.45 : 0.52))
 
@@ -298,13 +306,13 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
               key={SHOTS[i]}
               className="group absolute pointer-events-auto cursor-zoom-in"
               style={{ left: tile.x, top: tile.y, width: tile.w }}
-              initial={{ opacity: 0, scale: 0.7, y: 16 }}
+              initial={{ opacity: 0, scale: 0.72, y: 16 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               whileHover={{ scale: 1.06 }}
               whileTap={{ scale: 0.99 }}
-              // 波次浮现：先边缘外侧 → 再靠中——像灯一盏盏在失控中亮起
+              // 波次浮现：分散些步长，让 10 张在开场后依次被“灯”找到
               transition={{
-                delay: 1.3 + i * 0.4,
+                delay: 1.15 + i * 0.24,
                 type: 'spring',
                 stiffness: 120,
                 damping: 18,
@@ -323,7 +331,7 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
               />
               <img
                 src={SHOTS[i]}
-                alt={CAPTIONS[i]}
+                alt={`第 ${i + 1} 张幕后照片`}
                 width={d.w}
                 height={d.h}
                 loading="lazy"
@@ -331,14 +339,10 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
                 draggable={false}
                 className="relative block h-auto w-full rounded-xl border border-white/20 drop-shadow-[0_10px_18px_rgba(0,0,0,0.5)] transition-[filter,transform] duration-300 ease-out group-hover:scale-[1.03] group-hover:brightness-110 group-hover:drop-shadow-[0_0_18px_rgba(255,120,160,0.5)]"
               />
-              {/* 右下角编号徽标 */}
-              <span className="font-cartoon-latin absolute right-1.5 top-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-black/55 px-1.5 text-[10px] font-bold text-[#ffe09a] ring-1 ring-white/30 backdrop-blur-sm">
+              {/* 常显编号（左上角浅底数字）：方便你按编号告知我每张背后的故事 */}
+              <span className="font-cartoon-latin pointer-events-none absolute left-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-md bg-black/45 px-1 text-[10.5px] font-bold text-white ring-1 ring-white/25 backdrop-blur-sm">
                 {String(i + 1).padStart(2, '0')}
               </span>
-              {/* 悬停显示这句幕后（我的工作） */}
-              <figcaption className="absolute bottom-1.5 left-1/2 z-10 w-[86%] -translate-x-1/2 whitespace-nowrap rounded-lg bg-[#0a0812]/75 px-2 py-1 text-center text-[10.5px] font-semibold text-[#ffe6ee] opacity-0 ring-1 ring-white/20 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100">
-                {CAPTIONS[i]}
-              </figcaption>
             </motion.figure>
           )
         })}
