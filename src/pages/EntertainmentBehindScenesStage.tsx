@@ -249,14 +249,24 @@ function layoutWall(
           const stepX = ov.ox + gap
           const stepY = ov.oy + gap
           const upperFirst = ov.ab <= ov.bb
-          const tries =
-            upperFirst
-              ? [[A, i, 0, -stepY], [B, j, 0, stepY], [B, j, stepX, 0], [A, i, -stepX, 0]]
-              : [[B, j, 0, -stepY], [A, i, 0, stepY], [A, i, -stepX, 0], [B, j, stepX, 0]]
+          type Cand = { o: Tile; oi: number; dx: number; dy: number }
+          const cands: Cand[] = upperFirst
+            ? [
+                { o: A, oi: i, dx: 0, dy: -stepY },
+                { o: B, oi: j, dx: 0, dy: stepY },
+                { o: B, oi: j, dx: stepX, dy: 0 },
+                { o: A, oi: i, dx: -stepX, dy: 0 },
+              ]
+            : [
+                { o: B, oi: j, dx: 0, dy: -stepY },
+                { o: A, oi: i, dx: 0, dy: stepY },
+                { o: A, oi: i, dx: -stepX, dy: 0 },
+                { o: B, oi: j, dx: stepX, dy: 0 },
+              ]
           let done = false
-          for (const [o, oi, dx, dy] of tries) {
-            if (clearSpot(o, oi, o.x + dx, o.y + dy)) {
-              assignMove(o, oi, dx, dy)
+          for (const c of cands) {
+            if (clearSpot(c.o, c.oi, c.o.x + c.dx, c.o.y + c.dy)) {
+              assignMove(c.o, c.oi, c.dx, c.dy)
               changed = true
               done = true
               break
