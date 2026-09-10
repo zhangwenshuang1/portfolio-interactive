@@ -50,25 +50,17 @@ const WHY = [
   '一个正在寻找未来的人。',
 ]
 
-// —— 我在这支片子里做了什么 ——
+// —— 我在这支片子里做了什么（精简版，一屏可见） ——
 const DUTIES: Array<{ tag: string; title: string; points: string[] }> = [
   {
     tag: '01',
     title: '项目统筹与内容制作',
-    points: [
-      '参与纪录片项目全流程制作与统筹，协调团队成员及采访、拍摄、后期等环节，推动跨周期项目按计划完成交付。',
-      '负责素材筛选、整理与粗剪，梳理人物与事件主线，从大量素材中提炼核心内容，建立清晰素材结构。',
-      '通过结构重组、镜头取舍与节奏调整优化叙事表达。',
-    ],
+    points: ['统筹全流程制作，协调采访、拍摄、后期，推动跨周期项目按期交付。', '筛选与粗剪素材，梳理人物主线，建立清晰素材结构。'],
   },
   {
     tag: '02',
     title: '内容传播与新媒体运营',
-    points: [
-      '项目上线后从 0 到 1 搭建新媒体账号，根据平台用户特点与内容消费习惯进行长片拆解与短视频矩阵策划。',
-      '将纪录片内容转化为系列短视频、人物故事切片及宣传素材，负责多条短视频宣传内容制作。',
-      '小红书累计获赞 2000+、新增粉丝 600+；B站播放量 7000+。',
-    ],
+    points: ['从 0 到 1 搭建新媒体账号，把长片拆解为短视频矩阵。', '负责多条宣传物料制作，沉淀系列人物故事切片。'],
   },
 ]
 
@@ -184,7 +176,7 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
 
   return (
     <div
-      className="relative my-auto w-full select-none overflow-hidden rounded-[26px] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_30px_80px_rgba(4,8,14,0.55)]"
+      className="relative my-auto flex w-full select-none flex-col overflow-hidden rounded-[26px] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_30px_80px_rgba(4,8,14,0.55)]"
       style={{
         background:
           'radial-gradient(150% 130% at 78% -10%, #1b2637 0%, #101722 44%, #080b11 100%)',
@@ -209,9 +201,9 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
       </div>
 
       {/* —— 上半：左「节目监视器」+ 右「项目/信息面板」 —— */}
-      <div className="grid gap-4 px-4 pb-4 pt-4 sm:px-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
+      <div className="grid gap-4 px-4 pb-3 pt-3.5 sm:px-5 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,1fr)]">
         {/* 节目监视器：全场最大 —— 预告片 */}
-        <div>
+        <div className="flex min-h-0 flex-col">
           <div className="mb-2 flex items-center gap-2">
             <span className="font-cartoon-latin text-[10.5px] font-bold uppercase tracking-[0.24em] text-[#ffd166]/80">
               Program Monitor
@@ -277,29 +269,29 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
             <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
           </div>
 
-          <div className="flex min-h-0 flex-1 flex-col gap-3 overflow-y-auto rounded-[14px] border border-white/10 bg-white/[0.035] p-3.5 sm:p-4">
+          <div className="flex min-h-0 flex-1 flex-col gap-2.5 rounded-[14px] border border-white/10 bg-white/[0.035] p-3.5 sm:p-4">
             {/* WHY HIM / HER? */}
             <div>
               <p className="font-cartoon-latin text-[10px] font-bold uppercase tracking-[0.24em] text-white/40">
                 Why him / her ?
               </p>
               <p
-                className="mt-1 text-[17px] font-bold leading-snug text-[#fff6f0] sm:text-[19px]"
+                className="mt-1 text-[16px] font-bold leading-snug text-[#fff6f0] sm:text-[17px]"
                 style={{ fontFamily: "'ZCOOL KuaiLe','Microsoft YaHei',sans-serif" }}
               >
                 {WHY[0]}
               </p>
               <p
-                className="text-[15px] font-bold leading-snug text-[#ffd9a8] sm:text-[16px]"
+                className="text-[14.5px] font-bold leading-snug text-[#ffd9a8] sm:text-[15px]"
                 style={{ fontFamily: "'ZCOOL KuaiLe','Microsoft YaHei',sans-serif" }}
               >
                 {WHY[1]}
               </p>
-              <div className="mt-2.5 flex flex-wrap gap-1.5">
+              <div className="mt-2 flex flex-wrap gap-1.5">
                 {THEME.map((t) => (
                   <span
                     key={t}
-                    className="rounded-full border border-white/15 bg-white/5 px-2.5 py-1 text-[11.5px] font-semibold text-[#d8e6f2]/85"
+                    className="rounded-full border border-white/15 bg-white/5 px-2.5 py-0.5 text-[11px] font-semibold text-[#d8e6f2]/85"
                   >
                     {t}
                   </span>
@@ -313,14 +305,14 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
             {DUTIES.map((d) => (
               <div key={d.tag}>
                 <div className="flex items-center gap-2">
-                  <span className="font-cartoon-latin flex h-6 w-6 flex-none items-center justify-center rounded-md bg-gradient-to-br from-[#7dd3fc] to-[#ffd166] text-[11px] font-black text-[#0a1220]">
+                  <span className="font-cartoon-latin flex h-5 w-5 flex-none items-center justify-center rounded-md bg-gradient-to-br from-[#7dd3fc] to-[#ffd166] text-[10.5px] font-black text-[#0a1220]">
                     {d.tag}
                   </span>
-                  <h3 className="text-[13.5px] font-black tracking-wide text-[#fff6f0]">{d.title}</h3>
+                  <h3 className="text-[13px] font-black tracking-wide text-[#fff6f0]">{d.title}</h3>
                 </div>
-                <ul className="mt-1.5 space-y-1.5 pl-1">
+                <ul className="mt-1 space-y-1 pl-1">
                   {d.points.map((p) => (
-                    <li key={p} className="flex gap-2 text-[12.5px] leading-relaxed text-[#cfdae6]/85">
+                    <li key={p} className="flex gap-2 text-[12px] leading-relaxed text-[#cfdae6]/85">
                       <span className="mt-[7px] h-1 w-1 flex-none rounded-full bg-[#7dd3fc]/70" />
                       <span>{p}</span>
                     </li>
@@ -332,9 +324,9 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
             {/* 数据 */}
             <div className="mt-auto grid grid-cols-3 gap-2 pt-1">
               {STATS.map((s) => (
-                <div key={s.k} className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-2 text-center">
-                  <div className="font-cartoon-latin text-[15px] font-black text-[#ffd166]">{s.v}</div>
-                  <div className="mt-0.5 text-[10.5px] font-semibold text-white/50">{s.k}</div>
+                <div key={s.k} className="rounded-lg border border-white/10 bg-white/[0.04] px-2 py-1.5 text-center">
+                  <div className="font-cartoon-latin text-[14px] font-black text-[#ffd166]">{s.v}</div>
+                  <div className="mt-0.5 text-[10px] font-semibold text-white/50">{s.k}</div>
                 </div>
               ))}
             </div>
@@ -358,7 +350,7 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
         <div
           ref={binRef}
           className="relative w-full"
-          style={{ height: 'clamp(150px, 24vh, 240px)' }}
+          style={{ height: 'clamp(120px, 19vh, 190px)' }}
         >
           {bin.map((b, i) => {
             const d = NATIVE[i]
