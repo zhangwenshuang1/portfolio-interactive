@@ -356,9 +356,17 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
     const board = boxRef.current
     const center = videoRef.current
     if (!board || !center) return
-    const frame = requestAnimationFrame(() => {
+
+    let raf = 0
+    let lastKey = ''
+    const run = () => {
       const bb = board.getBoundingClientRect()
       const cb = center.getBoundingClientRect()
+      // 仅在尺寸真正稳定后才排版：视频未渲染出高度时 cb.height 为 0，直接跳过等下一帧
+      if (bb.width < 2 || bb.height < 2 || cb.width < 2 || cb.height < 2) return
+      const key = `${Math.round(bb.width)}x${Math.round(bb.height)}|${Math.round(cb.left - bb.left)}x${Math.round(cb.top - bb.top)}x${Math.round(cb.width)}x${Math.round(cb.height)}`
+      if (key === lastKey) return
+      lastKey = key
       const breath = Math.max(18, Math.round(bb.width * 0.02))
       const avoid: Rect = {
         x0: cb.left - bb.left - breath,
@@ -369,8 +377,36 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
       const gap = Math.max(16, Math.round(bb.width * 0.014))
       const cand = layoutWall(bb.width, bb.height, avoid, gap, 'zongyi-stage-1')
       setTiles(cand)
-    })
-    return () => cancelAnimationFrame(frame)
+    }
+    const schedule = () => {
+      cancelAnimationFrame(raf)
+      raf = requestAnimationFrame(run)
+    }
+
+    schedule()
+    // 字体/视频元数据/页面转场都可能改变版心尺寸：持续监听，尺寸一变就重排
+    const ro = new ResizeObserver(schedule)
+    ro.observe(board)
+    ro.observe(center)
+    window.addEventListener('resize', schedule)
+    const v = center.querySelector('video')
+    if (v) {
+      v.addEventListener('loadedmetadata', schedule)
+      v.addEventListener('loadeddata', schedule)
+    }
+    // 兜底：转场结束后再校准一次
+    const timers = [0, 120, 360, 800].map((t) => window.setTimeout(schedule, t))
+
+    return () => {
+      cancelAnimationFrame(raf)
+      ro.disconnect()
+      window.removeEventListener('resize', schedule)
+      if (v) {
+        v.removeEventListener('loadedmetadata', schedule)
+        v.removeEventListener('loadeddata', schedule)
+      }
+      timers.forEach((t) => clearTimeout(t))
+    }
   }, [])
 
   return (
