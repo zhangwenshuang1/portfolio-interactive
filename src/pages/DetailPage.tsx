@@ -4,6 +4,7 @@ import PhotographyCarouselPanel from './PhotographyCarouselPanel'
 import EntertainmentCarouselPanel from './EntertainmentCarouselPanel'
 import DocumentaryCarouselPanel from './DocumentaryCarouselPanel'
 import CreateCarouselPanel from './CreateCarouselPanel'
+import ConnectCarouselPanel from './ConnectCarouselPanel'
 
 interface DetailPageProps {
   puzzleId: string
@@ -36,6 +37,11 @@ export default function DetailPage({ puzzleId, onClose }: DetailPageProps) {
   // 品牌部实习（CREATE）：创意监看台 → 中央主作品 + 右侧作品索引（实拍/AI）+ 幕后胶片带
   if (puzzle.category === 'brand') {
     return <CreateCarouselPanel puzzle={puzzle} onClose={onClose} />
+  }
+
+  // 志愿与连接（CONNECT）：摊开的手账相册 → 左页照片 + 右页手写故事 + 底部翻页
+  if (puzzle.category === 'ai_comic') {
+    return <ConnectCarouselPanel puzzle={puzzle} onClose={onClose} />
   }
 
   const handleClose = () => {
