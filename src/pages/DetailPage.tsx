@@ -3,6 +3,7 @@ import { usePuzzleStore } from '../store/puzzleStore'
 import PhotographyCarouselPanel from './PhotographyCarouselPanel'
 import EntertainmentCarouselPanel from './EntertainmentCarouselPanel'
 import DocumentaryCarouselPanel from './DocumentaryCarouselPanel'
+import CreateCarouselPanel from './CreateCarouselPanel'
 
 interface DetailPageProps {
   puzzleId: string
@@ -30,6 +31,11 @@ export default function DetailPage({ puzzleId, onClose }: DetailPageProps) {
   // 纪录片实习（LEAD）：剪辑工作台 → 左上预告片 + 右上项目笔记 + 下半素材箱
   if (puzzle.category === 'documentary') {
     return <DocumentaryCarouselPanel puzzle={puzzle} onClose={onClose} />
+  }
+
+  // 品牌部实习（CREATE）：创意监看台 → 中央主作品 + 右侧作品索引（实拍/AI）+ 幕后胶片带
+  if (puzzle.category === 'brand') {
+    return <CreateCarouselPanel puzzle={puzzle} onClose={onClose} />
   }
 
   const handleClose = () => {
