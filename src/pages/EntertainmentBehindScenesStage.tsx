@@ -313,20 +313,18 @@ function layoutWall(
       if (fi === -1) break
       const o = out[fi]
       const h = Ht(o, fi)
-      // 先在外侧两列找空位（左列在板左、右列在板右，从上往下排）
+      // 全板网格扫描：从左到右、从上到下找一个不压视频、不碰他片的位置
       let placed = false
-      scans: for (const left of [true, false]) {
-        const cx = left ? edgeMinX : edgeMaxX - o.w
-        if (cx + o.w > edgeMaxX || cx < edgeMinX) continue
-        const rows = Math.ceil((edgeMaxY - edgeMinY) / Math.max(1, h + gap)) + 2
-        for (let r = 0; r < rows; r++) {
-          const cy = edgeMinY + r * (h + gap)
-          if (cy + h > edgeMaxY) break
+      const stepPx = Math.max(6, Math.round(gap * 0.5))
+      const maxX = edgeMaxX - o.w
+      const maxY = edgeMaxY - h
+      for (let cy = edgeMinY; cy <= maxY + 0.001 && !placed; cy += stepPx) {
+        for (let cx = edgeMinX; cx <= maxX + 0.001; cx += stepPx) {
           if (clearSpot(o, fi, cx, cy)) {
             o.x = Math.round(cx)
             o.y = Math.round(cy)
             placed = true
-            break scans
+            break
           }
         }
       }
