@@ -108,7 +108,27 @@ function layoutWall(
         x0 - gap < q.r && x1 + gap > q.l && y0 - gap < q.b && y1 + gap > q.t,
     )
 
+  // —— 先把“新加的第 11 张”（索引 10，横图）钉在左上角，给足纸幅 ——
+  // 之后其余照片再绕着它摊开；这样它不会被后来的碰撞逻辑挤小，也不用反复挪位。
+  const HI = SHOWN - 1
+  const hiWanted = Math.round(BW * 0.22)
+  let hiPlaced = false
+  if (SHOWN > 0) {
+    const arHi = NATIVE[HI].w / NATIVE[HI].h
+    let hw = hiWanted
+    const hh = hw / arHi
+    if (hh > edgeMaxY - edgeMinY) hw = (edgeMaxY - edgeMinY) * arHi
+    const hx = edgeMinX
+    const hy = edgeMinY
+    const hW = Math.round(hw)
+    const hH = Math.round(hw / arHi)
+    out[HI] = { x: hx, y: hy, w: hW }
+    occ.push({ l: hx - gap, t: hy - gap, r: hx + hW + gap, b: hy + hH + gap })
+    hiPlaced = true
+  }
+
   for (let i = 0; i < SHOWN; i++) {
+    if (hiPlaced && i === HI) continue
     const ar = NATIVE[i].w / NATIVE[i].h
     const isPortrait = ar < 1
     // 张数变多后把基准纸幅调小一些：竖图约占板宽 15–21%、横图约占 17–23%，
@@ -133,7 +153,7 @@ function layoutWall(
         if (inFree(x, y, x + w, y + h)) continue
         if (collides(x, y, x + w, y + h)) continue
         occ.push({ l: x - gap, t: y - gap, r: x + w + gap, b: y + h + gap })
-        out.push({ x: Math.round(x), y: Math.round(y), w: Math.round(w) })
+        out[i] = { x: Math.round(x), y: Math.round(y), w: Math.round(w) }
         placed = true
         break
       }
@@ -155,7 +175,7 @@ function layoutWall(
           if (inFree(x, y, x + w2, y + h2)) continue
           if (collides(x, y, x + w2, y + h2)) continue
           occ.push({ l: x - gap, t: y - gap, r: x + w2 + gap, b: y + h2 + gap })
-          out.push({ x: Math.round(x), y: Math.round(y), w: Math.round(w2) })
+          out[i] = { x: Math.round(x), y: Math.round(y), w: Math.round(w2) }
           placed = true
           found = true
         }
@@ -174,12 +194,12 @@ function layoutWall(
             !collides(x0c, y0c, x0c + bw, y0c + bh)
           ) {
             occ.push({ l: x0c - gap, t: y0c - gap, r: x0c + bw + gap, b: y0c + bh + gap })
-            out.push({ x: Math.round(x0c), y: Math.round(y0c), w: Math.round(bw) })
+            out[i] = { x: Math.round(x0c), y: Math.round(y0c), w: Math.round(bw) }
             placedEdge = true
           }
         }
         if (!placedEdge) {
-          out.push({ x: edgeMinX, y: Math.max(padOut, edgeMaxY - bh), w: Math.round(bw) })
+          out[i] = { x: edgeMinX, y: Math.max(padOut, edgeMaxY - bh), w: Math.round(bw) }
         }
       }
     }
@@ -274,9 +294,15 @@ function layoutWall(
           }
           if (!done) {
             // 两个都缩一档，腾出空隙（同样压低自身高度）
-            if (A.w > MIN) { A.w = Math.max(MIN, Math.round(A.w * 0.8)) }
-            if (B.w > MIN) { B.w = Math.max(MIN, Math.round(B.w * 0.8)) }
-            changed = true
+            // 但“新加的第 11 张”（HI）优先保住纸幅：只缩另一个，尽量不缩它
+            if (i === HI || j === HI) {
+              const other = i === HI ? B : A
+              if (other.w > MIN) { other.w = Math.max(MIN, Math.round(other.w * 0.8)); changed = true }
+            } else {
+              if (A.w > MIN) { A.w = Math.max(MIN, Math.round(A.w * 0.8)) }
+              if (B.w > MIN) { B.w = Math.max(MIN, Math.round(B.w * 0.8)) }
+              changed = true
+            }
           }
         }
       }
@@ -295,7 +321,7 @@ function layoutWall(
         for (const [cx, cy] of cand) {
           if (clearSpot(o, i, cx, cy)) { assignMove(o, i, cx - o.x, cy - o.y); ok = true; changed = true; break }
         }
-        if (!ok && o.w > MIN) { o.w = Math.max(MIN, Math.round(o.w * 0.8)); changed = true }
+        if (!ok && o.w > MIN && i !== HI) { o.w = Math.max(MIN, Math.round(o.w * 0.8)); changed = true }
       }
       if (changed) again = true
     }
@@ -328,7 +354,7 @@ function layoutWall(
           }
         }
       }
-      if (!placed && o.w > MIN) {
+      if (!placed && o.w > MIN && fi !== HI) {
         o.w = Math.max(MIN, Math.round(o.w * 0.7))
       } else if (!placed) {
         break // 已到最小仍无解：结束，避免死循环
