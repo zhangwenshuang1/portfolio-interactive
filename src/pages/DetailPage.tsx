@@ -2,6 +2,7 @@ import { motion } from 'framer-motion'
 import { usePuzzleStore } from '../store/puzzleStore'
 import PhotographyCarouselPanel from './PhotographyCarouselPanel'
 import EntertainmentCarouselPanel from './EntertainmentCarouselPanel'
+import DocumentaryCarouselPanel from './DocumentaryCarouselPanel'
 
 interface DetailPageProps {
   puzzleId: string
@@ -24,6 +25,11 @@ export default function DetailPage({ puzzleId, onClose }: DetailPageProps) {
   // 综艺实习（DO）：一站到底舞台内外 → 中央播放宣传片 + 四周幕后照片
   if (puzzle.category === 'entertainment') {
     return <EntertainmentCarouselPanel puzzle={puzzle} onClose={onClose} />
+  }
+
+  // 纪录片实习（LEAD）：剪辑工作台 → 左上预告片 + 右上项目笔记 + 下半素材箱
+  if (puzzle.category === 'documentary') {
+    return <DocumentaryCarouselPanel puzzle={puzzle} onClose={onClose} />
   }
 
   const handleClose = () => {
