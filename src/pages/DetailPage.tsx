@@ -5,6 +5,7 @@ import EntertainmentCarouselPanel from './EntertainmentCarouselPanel'
 import DocumentaryCarouselPanel from './DocumentaryCarouselPanel'
 import CreateCarouselPanel from './CreateCarouselPanel'
 import ConnectCarouselPanel from './ConnectCarouselPanel'
+import HobbyCarouselPanel from './HobbyCarouselPanel'
 
 interface DetailPageProps {
   puzzleId: string
@@ -42,6 +43,11 @@ export default function DetailPage({ puzzleId, onClose }: DetailPageProps) {
   // 志愿与连接（CONNECT）：摊开的手账相册 → 左页照片 + 右页手写故事 + 底部翻页
   if (puzzle.category === 'ai_comic') {
     return <ConnectCarouselPanel puzzle={puzzle} onClose={onClose} />
+  }
+
+  // 兴趣爱好（MOVE）：一张兴趣地图 → 鼠标移到兴趣上点亮图标 + 浮出该兴趣照片
+  if (puzzle.category === 'sports') {
+    return <HobbyCarouselPanel puzzle={puzzle} onClose={onClose} />
   }
 
   const handleClose = () => {

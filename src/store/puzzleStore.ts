@@ -59,11 +59,11 @@ const PUZZLE_CATEGORIES = [
   },
   {
     id: 'sports',
-    title: '运动',
-    emoji: '🏀',
+    title: '兴趣爱好',
+    emoji: '🎸',
     englishTitle: 'MOVE',
-    tagline: 'Go. Try. Keep going.',
-    keywords: ['篮球', '健身', '攀岩'],
+    tagline: 'Life is more than one lane.',
+    keywords: ['音乐', '烹饪', '攀岩', '游泳', '徒步', '篮球'],
     category: 'sports' as const,
   },
   {
