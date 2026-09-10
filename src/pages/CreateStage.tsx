@@ -1,4 +1,4 @@
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 // —— 作品清单：分「实拍类」与「AI类」 ——
 export type WorkMode = 'live' | 'ai'
+export type Orientation = 'portrait' | 'landscape'
 
 interface Work {
   key: string
@@ -23,17 +24,18 @@ interface Work {
   cn: string
   mode: WorkMode
   tag: string
+  orientation: Orientation
 }
 
 const WORKS: Work[] = [
   // 实拍类
-  { key: 'tan-dian-muke', title: '《暮刻书坊》', cn: '探店短片', mode: 'live', tag: '实拍' },
-  { key: 'live-anniv', title: '实拍周年活动', cn: '品牌活动记录', mode: 'live', tag: '实拍' },
+  { key: 'tan-dian-muke', title: '《暮刻书坊》', cn: '探店短片', mode: 'live', tag: '实拍', orientation: 'portrait' },
+  { key: 'live-anniv', title: '实拍周年活动', cn: '品牌活动记录', mode: 'live', tag: '实拍', orientation: 'landscape' },
   // AI 类
-  { key: 'long-restaurant', title: '《欢迎来到龙餐馆》', cn: 'AI 短片', mode: 'ai', tag: 'AI' },
-  { key: 'foreign-shop', title: '《老外的上海宝藏小店》', cn: 'AI 短片', mode: 'ai', tag: 'AI' },
-  { key: 'anniv-13', title: '收钱吧十三周年庆', cn: 'AI 品牌片', mode: 'ai', tag: 'AI' },
-  { key: 'father-flower', title: '《父亲的花》', cn: '父亲节特辑 · AI', mode: 'ai', tag: 'AI' },
+  { key: 'long-restaurant', title: '《欢迎来到龙餐馆》', cn: 'AI 短片', mode: 'ai', tag: 'AI', orientation: 'portrait' },
+  { key: 'foreign-shop', title: '《老外的上海宝藏小店》', cn: 'AI 短片', mode: 'ai', tag: 'AI', orientation: 'portrait' },
+  { key: 'anniv-13', title: '收钱吧十三周年庆', cn: 'AI 品牌片', mode: 'ai', tag: 'AI', orientation: 'landscape' },
+  { key: 'father-flower', title: '《父亲的花》', cn: '父亲节特辑 · AI', mode: 'ai', tag: 'AI', orientation: 'portrait' },
 ]
 
 // —— 幕后胶片带：6 张工作照（压到最长边 1400px 的 webp） ——
@@ -81,6 +83,7 @@ export default function CreateStage({ onClose }: StageProps) {
     [activeKey],
   )
   const accent = MODES[mode].accent
+  const isLandscape = active.orientation === 'landscape'
 
   const selectWork = useCallback((w: Work) => {
     setActiveKey(w.key)
@@ -101,6 +104,137 @@ export default function CreateStage({ onClose }: StageProps) {
     { mode: 'live', works: WORKS.filter((w) => w.mode === 'live') },
     { mode: 'ai', works: WORKS.filter((w) => w.mode === 'ai') },
   ]
+
+  // 每支作品的缩略图 + 标题（竖屏与横屏两种排列共用）
+  const workButton = (w: Work, gm: (typeof MODES)[WorkMode], vertical: boolean) => {
+    const on = w.key === activeKey
+    return (
+      <button
+        key={w.key}
+        onClick={() => selectWork(w)}
+        className={
+          'group flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition-all ' +
+          (vertical ? 'w-full' : 'min-w-0 flex-1')
+        }
+        style={{
+          borderColor: on ? `${gm.accent}aa` : 'rgba(255,255,255,0.1)',
+          background: on ? `${gm.accent}1a` : 'rgba(255,255,255,0.03)',
+        }}
+      >
+        <span className="relative h-9 w-12 flex-none overflow-hidden rounded-md border border-white/15 bg-black">
+          <img
+            src={`/brand/poster/${w.key}.jpg`}
+            alt={w.title}
+            loading="lazy"
+            decoding="async"
+            draggable={false}
+            className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+          />
+          <span
+            className="font-cartoon-latin absolute right-0 top-0 rounded-bl bg-black/70 px-1 text-[7.5px] font-black uppercase leading-tight text-white/85"
+          >
+            {w.orientation === 'landscape' ? '横' : '竖'}
+          </span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[12px] font-bold text-white/90">{w.title}</span>
+          <span className="block truncate text-[10.5px] font-semibold text-white/45">{w.cn}</span>
+        </span>
+        {on && (
+          <span
+            className="font-cartoon-latin flex-none text-[9.5px] font-black uppercase tracking-[0.14em]"
+            style={{ color: gm.accent }}
+          >
+            ON AIR
+          </span>
+        )}
+      </button>
+    )
+  }
+
+  // 竖屏时：右侧竖直作品索引
+  const indexPanel = (
+    <div className="flex min-h-0 flex-col">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="font-cartoon-latin text-[10.5px] font-bold uppercase tracking-[0.24em] text-[#ff9ec4]/80">
+          Work Index
+        </span>
+        <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
+      </div>
+
+      <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-[14px] border border-white/10 bg-white/[0.035] p-2.5">
+        {grouped.map(({ mode: gmode, works }) => {
+          const gm = MODES[gmode]
+          const isOn = mode === gmode
+          return (
+            <div key={gmode} className="flex min-h-0 flex-col">
+              <button
+                onClick={() => setMode(gmode)}
+                className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors"
+                style={{
+                  background: isOn ? `${gm.accent}1f` : 'transparent',
+                  boxShadow: isOn ? `inset 0 0 0 1px ${gm.accent}66` : 'none',
+                }}
+              >
+                <i className="h-1.5 w-1.5 rounded-full" style={{ background: gm.accent }} />
+                <span
+                  className="font-cartoon-latin text-[11px] font-black uppercase tracking-[0.16em]"
+                  style={{ color: isOn ? gm.accent : 'rgba(255,255,255,0.5)' }}
+                >
+                  {gm.label}
+                </span>
+                <span className="ml-auto text-[10px] font-semibold text-white/40">{gm.hint}</span>
+              </button>
+              <div className="mt-1 flex flex-col gap-1.5">
+                {works.map((w) => workButton(w, gm, true))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+
+  // 横屏时：作品索引横排在页面下方
+  const indexPanelHorizontal = (
+    <div className="flex flex-col gap-2 rounded-[14px] border border-white/10 bg-white/[0.035] p-2.5">
+      <div className="flex items-center gap-2">
+        <span className="font-cartoon-latin text-[10.5px] font-bold uppercase tracking-[0.24em] text-[#ff9ec4]/80">
+          Work Index
+        </span>
+        <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
+      </div>
+      <div className="flex flex-wrap items-stretch gap-2">
+        {grouped.map(({ mode: gmode, works }) => {
+          const gm = MODES[gmode]
+          const isOn = mode === gmode
+          return (
+            <div key={gmode} className="flex min-w-0 flex-1 items-stretch gap-2">
+              <button
+                onClick={() => setMode(gmode)}
+                className="flex w-[64px] flex-none flex-col items-center justify-center gap-1 rounded-lg px-1.5 py-1.5 text-center transition-colors"
+                style={{
+                  background: isOn ? `${gm.accent}1f` : 'transparent',
+                  boxShadow: isOn ? `inset 0 0 0 1px ${gm.accent}66` : 'none',
+                }}
+              >
+                <i className="h-1.5 w-1.5 rounded-full" style={{ background: gm.accent }} />
+                <span
+                  className="font-cartoon-latin text-[10px] font-black uppercase leading-tight tracking-[0.12em]"
+                  style={{ color: isOn ? gm.accent : 'rgba(255,255,255,0.5)' }}
+                >
+                  {gm.label}
+                </span>
+              </button>
+              <div className="flex min-w-0 flex-1 flex-wrap gap-1.5">
+                {works.map((w) => workButton(w, gm, false))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
 
   return (
     <div
@@ -131,8 +265,14 @@ export default function CreateStage({ onClose }: StageProps) {
         </span>
       </div>
 
-      {/* —— 主体：中央主窗口 | 右侧索引 | 幕后胶片带 —— */}
-      <div className="grid min-h-0 gap-4 px-4 pb-3.5 pt-3.5 sm:px-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_minmax(0,0.62fr)]">
+      {/* —— 主体：竖屏=中央主窗口 | 右侧索引 | 幕后胶片带；横屏=主窗口 | 胶片带，索引移到下方 —— */}
+      <div
+        className={
+          isLandscape
+            ? 'grid min-h-0 items-start gap-4 px-4 pb-3.5 pt-3.5 sm:px-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.34fr)]'
+            : 'grid min-h-0 gap-4 px-4 pb-3.5 pt-3.5 sm:px-5 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,0.95fr)_minmax(0,0.62fr)]'
+        }
+      >
         {/* 中央：主作品展示窗口 */}
         <div className="flex min-h-0 flex-col">
           <div className="mb-2 flex items-center gap-2">
@@ -144,7 +284,7 @@ export default function CreateStage({ onClose }: StageProps) {
             </span>
             <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
             <span className="font-cartoon-latin rounded bg-white/5 px-2 py-0.5 text-[10px] font-bold tracking-[0.16em] text-white/55">
-              主作品 · {active.tag}
+              主作品 · {active.tag} · {isLandscape ? '横屏' : '竖屏'}
             </span>
           </div>
 
@@ -154,13 +294,17 @@ export default function CreateStage({ onClose }: StageProps) {
             animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
             transition={{ duration: 0.55, ease: 'easeOut' }}
             onClick={toggleMute}
-            className="group relative min-h-0 flex-1 cursor-pointer overflow-hidden rounded-[16px] border border-white/15 bg-black"
+            className={
+              'group relative flex cursor-pointer items-center justify-center overflow-hidden rounded-[16px] border border-white/15 bg-black ' +
+              (isLandscape ? 'mx-auto aspect-video max-h-full w-full' : 'min-h-0 flex-1')
+            }
             style={{ boxShadow: `0 0 0 5px rgba(255,255,255,0.045),0_26px_60px_rgba(0,0,0,0.7),0_0_70px ${accent}44` }}
           >
+            {/* object-contain：始终保持视频原始比例，绝不裁剪 */}
             <video
               ref={videoRef}
               key={active.key}
-              className="absolute inset-0 h-full w-full object-cover"
+              className="block max-h-full max-w-full object-contain"
               src={`/brand/video/${active.key}.mp4`}
               poster={`/brand/poster/${active.key}.jpg`}
               autoPlay
@@ -201,87 +345,8 @@ export default function CreateStage({ onClose }: StageProps) {
           </div>
         </div>
 
-        {/* 右侧：作品索引（含模式切换） */}
-        <div className="flex min-h-0 flex-col">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="font-cartoon-latin text-[10.5px] font-bold uppercase tracking-[0.24em] text-[#ff9ec4]/80">
-              Work Index
-            </span>
-            <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
-          </div>
-
-          <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-hidden rounded-[14px] border border-white/10 bg-white/[0.035] p-2.5">
-            {grouped.map(({ mode: gmode, works }) => {
-              const gm = MODES[gmode]
-              const isOn = mode === gmode
-              return (
-                <div key={gmode} className="flex min-h-0 flex-col">
-                  {/* 分组头 = 模式切换按钮 */}
-                  <button
-                    onClick={() => setMode(gmode)}
-                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-left transition-colors"
-                    style={{
-                      background: isOn ? `${gm.accent}1f` : 'transparent',
-                      boxShadow: isOn ? `inset 0 0 0 1px ${gm.accent}66` : 'none',
-                    }}
-                  >
-                    <i className="h-1.5 w-1.5 rounded-full" style={{ background: gm.accent }} />
-                    <span
-                      className="font-cartoon-latin text-[11px] font-black uppercase tracking-[0.16em]"
-                      style={{ color: isOn ? gm.accent : 'rgba(255,255,255,0.5)' }}
-                    >
-                      {gm.label}
-                    </span>
-                    <span className="ml-auto text-[10px] font-semibold text-white/40">{gm.hint}</span>
-                  </button>
-
-                  {/* 该组作品 */}
-                  <div className="mt-1 flex flex-col gap-1.5">
-                    {works.map((w) => {
-                      const on = w.key === activeKey
-                      return (
-                        <button
-                          key={w.key}
-                          onClick={() => selectWork(w)}
-                          className="group flex items-center gap-2 rounded-lg border px-2 py-1.5 text-left transition-all"
-                          style={{
-                            borderColor: on ? `${gm.accent}aa` : 'rgba(255,255,255,0.1)',
-                            background: on ? `${gm.accent}1a` : 'rgba(255,255,255,0.03)',
-                          }}
-                        >
-                          <span
-                            className="relative h-9 w-12 flex-none overflow-hidden rounded-md border border-white/15 bg-black"
-                          >
-                            <img
-                              src={`/brand/poster/${w.key}.jpg`}
-                              alt={w.title}
-                              loading="lazy"
-                              decoding="async"
-                              draggable={false}
-                              className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                            />
-                          </span>
-                          <span className="min-w-0 flex-1">
-                            <span className="block truncate text-[12px] font-bold text-white/90">{w.title}</span>
-                            <span className="block truncate text-[10.5px] font-semibold text-white/45">{w.cn}</span>
-                          </span>
-                          {on && (
-                            <span
-                              className="font-cartoon-latin flex-none text-[9.5px] font-black uppercase tracking-[0.14em]"
-                              style={{ color: gm.accent }}
-                            >
-                              ON AIR
-                            </span>
-                          )}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        </div>
+        {/* 作品索引（含模式切换）：竖屏放右侧，横屏移到页面下方 */}
+        {!isLandscape && indexPanel}
 
         {/* 最右：幕后胶片带 BTS FILM STRIP */}
         <div className="flex min-h-0 flex-col">
@@ -293,7 +358,12 @@ export default function CreateStage({ onClose }: StageProps) {
             <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
           </div>
 
-          <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[14px] border border-white/10 bg-black/30 p-1.5">
+          <div
+            className={
+              'relative flex min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/10 bg-black/30 p-1.5 ' +
+              (isLandscape ? 'h-[min(52vh,440px)]' : 'flex-1')
+            }
+          >
             {/* 上下齿孔装饰 */}
             <span aria-hidden className="pointer-events-none absolute inset-y-1 left-0.5 w-1.5 opacity-40">
               {Array.from({ length: 18 }).map((_, i) => (
@@ -340,6 +410,11 @@ export default function CreateStage({ onClose }: StageProps) {
         </div>
       </div>
 
+      {/* 横屏时：作品索引横排在页面下方 */}
+      {isLandscape && (
+        <div className="px-4 pb-3.5 sm:px-5">{indexPanelHorizontal}</div>
+      )}
+
       {/* 关闭 */}
       <button
         onClick={onClose}
@@ -348,8 +423,6 @@ export default function CreateStage({ onClose }: StageProps) {
       >
         ✕
       </button>
-
-      <AnimatePresence />
     </div>
   )
 }
