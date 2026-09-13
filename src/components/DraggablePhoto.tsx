@@ -1,9 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useDragControls } from 'framer-motion'
 
 interface DraggablePhotoProps {
   /** 图片地址 */
   src: string
+  /**
+   * 位置的持久化标识（同一块板面上每张唯一）。
+   * 传入后，用户拖动过的位置会被记住（存浏览器本地），下次打开沿用。
+   */
+  persistId?: string
   /** 无障碍描述 */
   alt?: string
   /** 原图宽高，用来保持原始比例（零裁切） */
@@ -34,6 +39,7 @@ interface DraggablePhotoProps {
  */
 export default function DraggablePhoto({
   src,
+  persistId,
   alt = '',
   nativeW,
   nativeH,
@@ -48,6 +54,48 @@ export default function DraggablePhoto({
 }: DraggablePhotoProps) {
   const [zoomed, setZoomed] = useState(false)
   const dragControls = useDragControls()
+  // 拖动后的绝对位置（相对父级板面左上角）。null = 还没拖动过，用传入的初始 x/y。
+  const [pos, setPos] = useState<{ x: number; y: number } | null>(null)
+  // 每次拖动结束 +1，用作 motion 元素的 key：强制重挂载，丢掉 framer-motion 的拖动 transform，
+  // 让新写入的 left/top 生效（否则会与实际位移叠加，位置翻倍）。
+  const [resetKey, setResetKey] = useState(0)
+  const figRef = useRef<HTMLElement | null>(null)
+
+  // 键名：按 persistId 区分每张照片各自记住位置
+  const storageKey = persistId ? `dragpos:${persistId}` : null
+
+  // 首次挂载：若本地存过位置，就沿用（优先于默认排版）。
+  useEffect(() => {
+    if (!storageKey) return
+    try {
+      const raw = localStorage.getItem(storageKey)
+      if (raw) {
+        const p = JSON.parse(raw) as { x?: number; y?: number }
+        if (typeof p.x === 'number' && typeof p.y === 'number') {
+          setPos({ x: p.x, y: p.y })
+        }
+      }
+    } catch {
+      /* 忽略损坏的本地数据 */
+    }
+  }, [storageKey])
+
+  /** 拖动结束：把「初始位置 + 本次位移」算成新的绝对位置，存下并让元素按新 left/top 重挂载 */
+  const onDragEnd = (_e: unknown, info: { offset: { x: number; y: number } }) => {
+    const baseX = pos ? pos.x : x
+    const baseY = pos ? pos.y : y
+    const nx = Math.round(baseX + info.offset.x)
+    const ny = Math.round(baseY + info.offset.y)
+    setPos({ x: nx, y: ny })
+    setResetKey((k) => k + 1)
+    if (storageKey) {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify({ x: nx, y: ny }))
+      } catch {
+        /* 忽略存储失败 */
+      }
+    }
+  }
 
   useEffect(() => {
     if (!zoomed) return
@@ -76,18 +124,26 @@ export default function DraggablePhoto({
   const initial = from === 'rise' ? { opacity: 0, scale: 0.72, y: 16 } : { opacity: 0, scale: 0.6 }
   const animate = from === 'rise' ? { opacity: 1, scale: 1, y: 0 } : { opacity: 1, scale: 1 }
 
+  // 实际左/上：如果拖动过（或本地存过），用保存值；否则用传入的初始排版值
+  const finalX = pos ? pos.x : x
+  const finalY = pos ? pos.y : y
+
   return (
     <>
       <motion.figure
+        key={resetKey}
+        ref={figRef}
         className="group absolute touch-none"
-        style={{ left: x, top: y, width: w, cursor: 'grab' }}
-        initial={initial}
+        style={{ left: finalX, top: finalY, width: w, cursor: 'grab' }}
+        // 首次挂载播放入场动画；拖动后重挂载（resetKey>0）时不再重播，避免闪一下
+        initial={resetKey === 0 ? initial : false}
         animate={animate}
         drag
         dragControls={dragControls}
         dragListener={false}
         dragMomentum={false}
         dragElastic={0.06}
+        onDragEnd={onDragEnd}
         whileDrag={{ scale: 1.04, cursor: 'grabbing', zIndex: 60 }}
         whileHover={{ scale: 1.05 }}
         transition={{ delay, type: 'spring', stiffness: 140, damping: 20, mass: 0.7 }}

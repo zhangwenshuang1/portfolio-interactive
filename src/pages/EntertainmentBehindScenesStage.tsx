@@ -524,6 +524,7 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
             <DraggablePhoto
               key={SHOTS[i]}
               src={SHOTS[i]}
+              persistId={`ent-bts-${i + 1}`}
               alt={`第 ${i + 1} 张幕后照片`}
               nativeW={d.w}
               nativeH={d.h}

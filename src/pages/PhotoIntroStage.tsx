@@ -328,6 +328,7 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             <DraggablePhoto
               key={SHOTS[i]}
               src={SHOTS[i]}
+              persistId={`photo-intro-${i + 1}`}
               alt={`摄影随拍 ${i + 1}`}
               nativeW={d.w}
               nativeH={d.h}
