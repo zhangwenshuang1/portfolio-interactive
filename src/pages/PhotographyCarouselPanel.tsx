@@ -60,7 +60,7 @@ export default function PhotographyCarouselPanel({ puzzle, onClose }: PanelProps
 
         {showGallery && (
           <div className="mt-2 text-xs font-semibold text-gray-400 sm:text-sm">
-            点一点中间的 ‹ › 或左右画面，都能切换；鼠标停在画面上时轮播会暂停。
+            点击左右画面或者 ‹ › 都能切换图片，鼠标停在画面上时轮播会暂停，移开则继续播放。
           </div>
         )}
       </motion.div>
