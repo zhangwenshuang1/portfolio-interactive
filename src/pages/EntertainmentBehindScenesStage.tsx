@@ -363,6 +363,72 @@ function layoutWall(
     }
   }
 
+  // —— 手动微调（用户指定，编号 1-based）——
+  // 目测两排留白不均：右上「08 → 04」之间空隙偏大、下排「02 ← 06」之间空隙偏大。
+  // 按用户要求把 08 / 10 / 11 整体往右挪、06 / 07 / 09 整体往左挪，让两排分布更匀。
+  // 逐像素试探，一旦碰到邻居 / 中央视频 / 板边就立刻停住 —— 绝不会制造新的叠压。
+  {
+    const HtM = (o: Tile, idx: number) =>
+      Math.round(o.w / (NATIVE[idx].w / NATIVE[idx].h))
+    // 平移时两图之间至少保留 margin 的空隙，避免亚像素渲染造成视觉粘连
+    const MARGIN = 8
+    const hitM = (a: Tile, ai: number, b: Tile, bi: number) => {
+      const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)
+      const oy = Math.min(a.y + HtM(a, ai), b.y + HtM(b, bi)) - Math.max(a.y, b.y)
+      return ox > -MARGIN && oy > -MARGIN
+    }
+    const legalM = (idx: number, nx: number) => {
+      const o = out[idx]
+      if (!o) return false
+      if (nx < edgeMinX || nx + o.w > edgeMaxX) return false
+      // 不得压到中央视频呼吸带
+      if (
+        nx < freeRect.x1 &&
+        nx + o.w > freeRect.x0 &&
+        o.y < freeRect.y1 &&
+        o.y + HtM(o, idx) > freeRect.y0
+      ) return false
+      for (let k = 0; k < out.length; k++) {
+        if (k === idx || !out[k]) continue
+        if (hitM({ x: nx, y: o.y, w: o.w }, idx, out[k], k)) return false
+      }
+      return true
+    }
+    /** 朝 dir 方向平移，累计位移不超过该张的预算（避免在窄窗口把照片推离原布局太远） */
+    const moved: Record<number, number> = {}
+    const shift = (idx: number, dir: 1 | -1, budgetPx: number) => {
+      const o = out[idx]
+      if (!o) return
+      const left = budgetPx - (moved[idx] ?? 0)
+      if (left <= 0) return
+      let used = 0
+      for (; used < left; used++) {
+        if (!legalM(idx, o.x + dir)) break
+        o.x += dir
+      }
+      moved[idx] = (moved[idx] ?? 0) + used
+    }
+    // 参考板宽 1086px；按比例缩放，保证不同窗口下的观感一致
+    const k = BW / 1086
+    // 08 / 10 / 11 右移、06 / 07 / 09 左移。
+    // 06 与 10 在下排相向而行、横向会互相顶住，因此分多轮小幅交替推进，
+    // 让两边都移动一点、同时保留彼此间隙；每张总位移设上限，防止窄窗口下布局被推散。
+    const LEFT: Array<[number, number]> = [
+      [5, 34],  // 06 —— 左移，靠近 02
+      [6, 78],  // 07 —— 左移，跟随 06
+      [8, 34],  // 09 —— 左移
+    ]
+    const RIGHT: Array<[number, number]> = [
+      [7, 78],  // 08 —— 右移，靠近 04
+      [10, 78], // 11 —— 右移，跟随 08
+      [9, 34],  // 10 —— 右移
+    ]
+    for (let round = 0; round < 4; round++) {
+      for (const [idx, amt] of LEFT) shift(idx, -1, Math.round((amt / 2) * k))
+      for (const [idx, amt] of RIGHT) shift(idx, 1, Math.round((amt / 2) * k))
+    }
+  }
+
   return out
 }
 
