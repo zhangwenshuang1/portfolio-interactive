@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { rollAt, ROLL_SIZE } from '../lib/photoRoll'
 
@@ -38,6 +38,10 @@ interface Props {
 export default function PhotoCoverFlow({ className = '' }: Props) {
   const [current, setCurrent] = useState(0)
   const [paused, setPaused] = useState(false)
+  // 用户点「开始欣赏我的作品」时，鼠标通常正停在画面中央（因为按钮就在中间），
+  // 这不是“主动悬停”。因此：第一次进入时鼠标若已在画面上，不视为暂停；
+  // 只有当鼠标“离开过画面”之后，再移回来悬停，才真正暂停轮播。
+  const leftOnceRef = useRef(false)
 
   // 上一张 / 下一张：无缝循环，末尾的下一张回到第 1 张
   const next = useCallback(() => {
@@ -55,6 +59,15 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
     return () => window.clearTimeout(t)
   }, [current, paused, next])
 
+  // 悬停暂停：仅当鼠标此前离开过画面，才算“主动停留”
+  const handleEnter = useCallback(() => {
+    if (leftOnceRef.current) setPaused(true)
+  }, [])
+  const handleLeave = useCallback(() => {
+    leftOnceRef.current = true
+    setPaused(false)
+  }, [])
+
   // 也响应键盘左右键，方便只用方向键手动播放/切换
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -67,9 +80,14 @@ export default function PhotoCoverFlow({ className = '' }: Props) {
 
   return (
     <div className={className}>
-        {/* 舞台本身不监听悬停：若在“点击开始后鼠标留在原地”也算暂停，画幅永远不动。
-            此处于鼠标移入舞台的空白边缘也得让轮播继续。 */}
-        <div className="relative select-none overflow-hidden" style={{ height: CARD_H + 16 }}>
+        {/* 舞台监听悬停：鼠标此前离开过画面后，再移回来悬停 → 暂停轮播；
+            初次进入（鼠标因点击按钮而恰好在中央）不算悬停，轮播照常进行。 */}
+        <div
+          className="relative select-none overflow-hidden"
+          style={{ height: CARD_H + 16 }}
+          onMouseEnter={handleEnter}
+          onMouseLeave={handleLeave}
+        >
         {/* 米白衬底：暖色底板把整行作品框起来，大页面上不显得空（仿首页拼图那块米白底） */}
         <div
           aria-hidden

@@ -75,9 +75,6 @@ export default function PhotographyCarouselPanel({ puzzle, onClose }: PanelProps
             >
               <PhotoCoverFlow />
             </motion.div>
-            <p className="mt-4 text-center text-xs font-semibold text-gray-400">
-              鼠标移开画面即自动继续 · 也可按键盘的 ‹ / › 手动切换
-            </p>
           </div>
         ) : (
           <PhotoIntroStage onBegin={() => setShowGallery(true)} />

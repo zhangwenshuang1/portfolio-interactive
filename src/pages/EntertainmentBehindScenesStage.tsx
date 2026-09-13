@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useRef, useState, useLayoutEffect, useCallback } from 'react'
+import DraggablePhoto from '../components/DraggablePhoto'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 综艺实习（DO）「一站到底 · 舞台内外」
@@ -484,8 +485,7 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
             initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
-            onClick={toggleMute}
-            className="relative cursor-pointer overflow-hidden rounded-[18px] border border-white/20 bg-black shadow-[0_0_0_6px_rgba(255,255,255,0.05),0_30px_60px_rgba(0,0,0,0.65),0_0_60px_rgba(122,162,255,0.28)]"
+            className="relative overflow-hidden rounded-[18px] border border-white/20 bg-black shadow-[0_0_0_6px_rgba(255,255,255,0.05),0_30px_60px_rgba(0,0,0,0.65),0_0_60px_rgba(122,162,255,0.28)]"
           >
             <video
               className="block aspect-video w-full object-cover"
@@ -494,13 +494,18 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
               loop
               muted={muted}
               playsInline
+              controls
               preload="metadata"
             />
             {/* 中央第一个“静音”提示：点一下开始听到舞台的声音 */}
             {muted && (
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40 backdrop-blur-sm">
+              <button
+                type="button"
+                onClick={toggleMute}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40 backdrop-blur-sm transition hover:bg-black/65"
+              >
                 🔊 点击开启声音
-              </span>
+              </button>
             )}
             {/* hover 出现播放栏入口（轻量，不喧宾夺主） */}
             <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
@@ -512,72 +517,31 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
           </motion.div>
         </div>
 
-        {/* —— 幕后照片层：绕开中央视频，绝不遮挡「节目」 —— */}
+        {/* —— 幕后照片层：绕开中央视频，绝不遮挡「节目」—— 可拖动 + 点击放大 —— */}
         {tiles.map((tile, i) => {
           const d = NATIVE[i]
           return (
-            <motion.figure
+            <DraggablePhoto
               key={SHOTS[i]}
-              className="group absolute pointer-events-auto cursor-zoom-in"
-              style={{ left: tile.x, top: tile.y, width: tile.w }}
-              initial={{ opacity: 0, scale: 0.72, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              whileHover={{ scale: 1.06 }}
-              whileTap={{ scale: 0.99 }}
-              // 波次浮现：分散些步长，让 10 张在开场后依次被“灯”找到
-              transition={{
-                delay: 1.15 + i * 0.24,
-                type: 'spring',
-                stiffness: 120,
-                damping: 18,
-                mass: 0.7,
-              }}
+              src={SHOTS[i]}
+              alt={`第 ${i + 1} 张幕后照片`}
+              nativeW={d.w}
+              nativeH={d.h}
+              x={tile.x}
+              y={tile.y}
+              w={tile.w}
+              delay={1.15 + i * 0.24}
+              from="rise"
+              glow="neon"
+              imgClassName="rounded-xl border border-white/20 drop-shadow-[0_10px_18px_rgba(0,0,0,0.5)] group-hover:scale-[1.03] group-hover:drop-shadow-[0_0_18px_rgba(255,120,160,0.5)]"
             >
-              {/* 侧光霓虹晕圈 */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute -inset-[2px] rounded-[16px] opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                style={{
-                  background:
-                    'radial-gradient(120% 120% at 50% 50%, rgba(122,162,255,0) 58%, rgba(255,93,143,0.4) 82%, rgba(125,211,252,0.35) 94%, rgba(0,0,0,0) 100%)',
-                  filter: 'blur(5px)',
-                }}
-              />
-              <img
-                src={SHOTS[i]}
-                alt={`第 ${i + 1} 张幕后照片`}
-                width={d.w}
-                height={d.h}
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-                className="relative block h-auto w-full rounded-xl border border-white/20 drop-shadow-[0_10px_18px_rgba(0,0,0,0.5)] transition-[filter,transform] duration-300 ease-out group-hover:scale-[1.03] group-hover:brightness-110 group-hover:drop-shadow-[0_0_18px_rgba(255,120,160,0.5)]"
-              />
               {/* 常显编号（左上角浅底数字）：方便你按编号告知我每张背后的故事 */}
               <span className="font-cartoon-latin pointer-events-none absolute left-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-md bg-black/45 px-1 text-[10.5px] font-bold text-white ring-1 ring-white/25 backdrop-blur-sm">
                 {String(i + 1).padStart(2, '0')}
               </span>
-            </motion.figure>
+            </DraggablePhoto>
           )
         })}
-
-        {/* —— 底部一句话：揭示「这是我的幕后」 —— */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 3.4, duration: 0.7 }}
-          className="pointer-events-none absolute bottom-2 left-1/2 w-full max-w-[560px] -translate-x-1/2 px-4 text-center"
-        >
-          <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-[#ffd6e3]/55 sm:text-xs">
-            Behind The Scenes · On-Site Intern
-          </p>
-          <p
-            className="mt-1 text-[15px] font-bold text-[#fff6f0] [filter:drop-shadow(0_2px_10px_rgba(0,0,0,0.7))] sm:text-[17px]"
-            style={{ fontFamily: "'ZCOOL KuaiLe','Microsoft YaHei',sans-serif" }}
-          >
-            舞台侧光之外，是我按下快门的机位 ——
-          </p>
-        </motion.div>
       </div>
 
       {/* 关闭：走通详情页统一关闭逻辑（在 wrapper 里处理 markAsRead） */}

@@ -53,9 +53,6 @@ export default function EntertainmentCarouselPanel({ puzzle, onClose }: PanelPro
               把舞台侧光之外的它们，留作我自己的正片。
             </p>
           </div>
-          <span className="font-cartoon-latin hidden rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#ffe9a8] sm:inline-block">
-            7 shots on set
-          </span>
         </div>
       </motion.div>
 

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useRef, useState, useLayoutEffect } from 'react'
+import DraggablePhoto from '../components/DraggablePhoto'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 摄影「开场墙」：一大块中性面板，9 张随照围绕中央文案 / CTA 自然散布。
@@ -320,47 +321,23 @@ export default function PhotoIntroStage({ onBegin }: Props) {
         className="relative mx-auto w-full max-w-[1200px]"
         style={{ height: 'clamp(620px, 88vh, 960px)' }}
       >
-        {/* 相纸层（绝对定位 px · 左上锚 · 全部 rotate:0 直立 · 零裁切） */}
+        {/* 相纸层（绝对定位 px · 左上锚 · 全部 rotate:0 直立 · 零裁切 · 可拖动 + 点击放大） */}
         {tiles.map((tile, i) => {
           const d = NATIVE[i]
           return (
-            <motion.figure
+            <DraggablePhoto
               key={SHOTS[i]}
-              className="group pointer-events-auto absolute cursor-zoom-in"
-              style={{ left: tile.x, top: tile.y, width: tile.w }}
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              whileHover={{ scale: 1.07 }}
-              whileTap={{ scale: 0.99 }}
-              transition={{
-                delay: 0.04 + i * 0.045,
-                type: 'spring',
-                stiffness: 150,
-                damping: 20,
-                mass: 0.7,
-              }}
-            >
-              {/* hover 微光：紧贴相纸边缘的暖色晕圈，随悬停淡入 */}
-              <span
-                aria-hidden
-                className="pointer-events-none absolute -inset-[1.5px] rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
-                style={{
-                  background:
-                    'radial-gradient(120% 120% at 50% 50%, rgba(255,190,90,0) 60%, rgba(255,150,70,0.45) 84%, rgba(255,215,130,0.45) 92%, rgba(255,205,120,0) 100%)',
-                  filter: 'blur(4px)',
-                }}
-              />
-              <img
-                src={SHOTS[i]}
-                alt=""
-                width={d.w}
-                height={d.h}
-                loading="lazy"
-                decoding="async"
-                draggable={false}
-                className="relative block h-auto w-full rounded-xl drop-shadow-[0_10px_16px_rgba(110,75,30,0.16)] transition-[filter,transform] duration-300 ease-out group-hover:scale-[1.03] group-hover:brightness-110 group-hover:saturate-125 group-hover:drop-shadow-[0_0_16px_rgba(255,150,80,0.6)]"
-              />
-            </motion.figure>
+              src={SHOTS[i]}
+              alt={`摄影随拍 ${i + 1}`}
+              nativeW={d.w}
+              nativeH={d.h}
+              x={tile.x}
+              y={tile.y}
+              w={tile.w}
+              delay={0.04 + i * 0.045}
+              glow="warm"
+              imgClassName="rounded-xl drop-shadow-[0_10px_16px_rgba(110,75,30,0.16)] group-hover:scale-[1.03] group-hover:saturate-125 group-hover:drop-shadow-[0_0_16px_rgba(255,150,80,0.6)]"
+            />
           )
         })}
 
@@ -378,17 +355,17 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             <span className="rounded-full bg-[rgba(255,252,245,0.62)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.42em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
               胶片上的 · 九封信
             </span>
-            <h2 className="max-w-[470px] text-[clamp(17px,3.05vw,25px)] font-black leading-snug tracking-wide text-[#241c10] [filter:drop-shadow(0_2px_12px_rgba(255,248,236,0.95))]">
-              趁还没被风吹散，
-              <br className="sm:hidden" />
-              我把舍不得的都叠进
-              <span className="bg-gradient-to-r from-[#0f9b8e] via-[#3b8fd9] to-[#b0395f] bg-clip-text text-transparent antialiased">
-                方寸之间
-              </span>
-            </h2>
-            <p className="max-w-[400px] text-[13.5px] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              一张相纸，是一个被我轻轻合上的片段——
-              你若翻开，请慢一点。
+            <p className="max-w-[430px] text-[clamp(12.5px,1.55vw,14px)] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
+              我喜欢拿着相机去看人，也去看这个世界。
+            </p>
+            <p className="max-w-[430px] text-[clamp(12.5px,1.55vw,14px)] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
+              每一次按下快门，我都在寻找一些细微的东西：一个人的眼神、一个自然的动作、一瞬间流露出的情绪，或者某种只有属于他自己的气质。
+            </p>
+            <p className="max-w-[430px] text-[clamp(12.5px,1.55vw,14px)] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
+              我喜欢摄影，是因为它让我发现，美并不只有一种样子。镜头里的每个人，都有自己独特的光。
+            </p>
+            <p className="max-w-[430px] text-[11px] font-bold uppercase tracking-[0.18em] text-[#8a5a2a]/80">
+              拖动照片换个位置 · 点击照片可放大
             </p>
             <button
               onClick={onBegin}

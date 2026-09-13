@@ -100,18 +100,6 @@ export default function LandingPage({ onStart }: LandingPageProps) {
           </motion.button>
         </motion.div>
       </div>
-
-      {/* 底部提示 */}
-      <div className="pointer-events-none absolute bottom-4 left-1/2 z-10 -translate-x-1/2 text-[#1f4d5e]/70">
-        <motion.div
-          animate={{ y: [0, 8, 0] }}
-          transition={{ repeat: Infinity, duration: 1.6 }}
-          className="flex flex-col items-center gap-2 text-xs tracking-[0.25em]"
-        >
-          <span>滑动拼图 · 认识我</span>
-          <span className="text-xl">▼</span>
-        </motion.div>
-      </div>
     </motion.section>
   )
 }
