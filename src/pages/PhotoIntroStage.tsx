@@ -318,8 +318,8 @@ export default function PhotoIntroStage({ onBegin }: Props) {
     >
       <div
         ref={boxRef}
-        className="relative mx-auto w-full max-w-[1200px]"
-        style={{ height: 'clamp(620px, 88vh, 960px)' }}
+        className="relative mx-auto h-full w-full max-w-[1200px]"
+        style={{ height: 'clamp(520px, 74vh, 860px)' }}
       >
         {/* 相纸层（绝对定位 px · 左上锚 · 全部 rotate:0 直立 · 零裁切 · 可拖动 + 点击放大） */}
         {tiles.map((tile, i) => {
@@ -353,20 +353,11 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             transition={{ delay: 0.4, duration: 0.6, ease: 'easeOut' }}
             className="flex flex-col items-center gap-3 text-center"
           >
-            <span className="rounded-full bg-[rgba(255,252,245,0.62)] px-3.5 py-1.5 text-[10px] font-black uppercase tracking-[0.42em] text-[#8a5a2a] shadow-sm ring-1 ring-white/60 backdrop-blur-[6px]">
-              胶片上的 · 九封信
-            </span>
             <p className="max-w-[430px] text-[clamp(12.5px,1.55vw,14px)] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              我喜欢拿着相机去看人，也去看这个世界。
+              我喜欢拿着相机去探索世界，也会用相机发现每个人不同的美。也许是一次回眸、一束落在脸上的光，一个没有刻意准备的笑，甚至某个短暂而安静的瞬间。摄影于我而言，是把这些转瞬即逝的片刻留下来。
             </p>
             <p className="max-w-[430px] text-[clamp(12.5px,1.55vw,14px)] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              每一次按下快门，我都在寻找一些细微的东西：一个人的眼神、一个自然的动作、一瞬间流露出的情绪，或者某种只有属于他自己的气质。
-            </p>
-            <p className="max-w-[430px] text-[clamp(12.5px,1.55vw,14px)] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              我喜欢摄影，是因为它让我发现，美并不只有一种样子。镜头里的每个人，都有自己独特的光。
-            </p>
-            <p className="max-w-[430px] text-[11px] font-bold uppercase tracking-[0.18em] text-[#8a5a2a]/80">
-              拖动照片换个位置 · 点击照片可放大
+              镜头只是让我有机会，在时间经过之前，看见它。
             </p>
             <button
               onClick={onBegin}

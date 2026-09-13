@@ -32,7 +32,7 @@ export default function PhotographyCarouselPanel({ puzzle, onClose }: PanelProps
       initial={{ opacity: 0 }}
       animate={{ opacity: leaving ? 0 : 1 }}
       transition={{ duration: 0.25 }}
-      className="fixed inset-0 z-50 flex flex-col overflow-y-auto bg-[#fffaf3]"
+      className="fixed inset-0 z-50 flex flex-col overflow-hidden bg-[#fffaf3]"
     >
       <motion.div
         initial={{ y: -16, opacity: 0 }}
@@ -65,7 +65,7 @@ export default function PhotographyCarouselPanel({ puzzle, onClose }: PanelProps
         )}
       </motion.div>
 
-      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col px-4 py-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden px-4 py-4 sm:px-6 lg:px-8">
         {showGallery ? (
           <div className="my-auto">
             <motion.div
