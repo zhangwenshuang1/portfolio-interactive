@@ -68,6 +68,7 @@ function seededRand(seedKey: string) {
  * 把 12 张随机、彼此不重叠地放到面板空处。
  * @param gap       照片间最小空隙（px）
  * @param freeRect  中央文案/CTA 外包留白（外扩后）
+ * @param scale     全局尺寸系数（空间不足时整体缩图，保证放得下且不重叠）
  */
 function layoutWall(
   BW: number,
@@ -75,6 +76,7 @@ function layoutWall(
   freeRect: Rect,
   gap: number,
   seedKey: string,
+  scale = 1,
 ): Tile[] {
   const rand = seededRand(seedKey)
   // 面板四周留白放大些：让最外圈相纸离板边有一段清清爽爽的呼吸带，彼此更好分辨
@@ -105,12 +107,14 @@ function layoutWall(
     const isPortrait = ar < 1
     // 起始尺寸留有余裕：竖图宽约 18–23%板宽、横图约 23–28%，
     // 四周留白较多、彼此间隙拉大 —— 九张“各占一席、绝不挤碰”的摊开册页质感。
+    // scale 为全局缩放系数：空间不足时整体缩图，从根上保证 8 张都放得下。
     const w0 =
       BW *
-      (isPortrait ? 0.18 + rand() * 0.05 : 0.23 + rand() * 0.05)
+      (isPortrait ? 0.18 + rand() * 0.05 : 0.23 + rand() * 0.05) *
+      scale
     let w = w0
     // 竖图纵深更高、更吃空间：把它最小步进放宽些，便于塞进外围空带又不至于遮挡
-    const minW = Math.max(54, w0 * (isPortrait ? 0.45 : 0.52))
+    const minW = Math.max(46, w0 * (isPortrait ? 0.45 : 0.52))
 
     let placed = false
     // 缩小曲线更长、更诚实：一路小幅减宽直到彻底撞不上，让主循环几乎总能成功，
@@ -229,9 +233,11 @@ export default function PhotoIntroStage({ onBegin }: Props) {
     const board = boxRef.current
     const center = centerRef.current
     if (!board || !center) return
-    const frame = requestAnimationFrame(() => {
+
+    const compute = () => {
       const bb = board.getBoundingClientRect()
       const cb = center.getBoundingClientRect()
+      if (bb.width < 2 || bb.height < 2) return
       // 更贴近中央的“贴纸式”构图：呼吸空隙收得更紧，让围绕文案的一圈不留大空洞，
       // 但仍保证任何相纸都不压到文字
       // breath 也放大些：文字周围留的呼吸带允许相纸离得较远，绝无任何一张贴上文案
@@ -286,26 +292,82 @@ export default function PhotoIntroStage({ onBegin }: Props) {
         return total + sy * 4 + sx * 4
       }
 
-      let best: Tile[] = layoutWall(bb.width, bb.height, avoid, gap, 'album-base')
+      // ── 重叠检测：任意两张相纸的（含 gap 的）外扩盒相交即判为重叠 ──
+      const hasOverlap = (list: Tile[]) => {
+        for (let a = 0; a < list.length; a++) {
+          const arA = NATIVE[a].w / NATIVE[a].h
+          const hA = list[a].w / arA
+          for (let b = a + 1; b < list.length; b++) {
+            const arB = NATIVE[b].w / NATIVE[b].h
+            const hB = list[b].w / arB
+            const sepX =
+              list[a].x + list[a].w + gap <= list[b].x ||
+              list[b].x + list[b].w + gap <= list[a].x
+            const sepY =
+              list[a].y + hA + gap <= list[b].y ||
+              list[b].y + hB + gap <= list[a].y
+            if (!sepX && !sepY) return true
+          }
+        }
+        return false
+      }
+
+      // ── 选最优解：多随机种子评分挑四角最均衡的一版；若出现任何重叠，
+      //    就整体缩小照片尺寸（scale）重排，直到彻底无重叠（最坏情况也保证不叠）──
+      let best: Tile[] = []
       let bestS = -Infinity
-      for (let s = 0; s < 240; s++) {
-        const cand = layoutWall(
+      let scale = 1
+      for (let attempt = 0; attempt < 12; attempt++) {
+        bestS = -Infinity
+        let bestForScale: Tile[] | null = null
+        for (let s = 0; s < 240; s++) {
+          const cand = layoutWall(
+            bb.width,
+            bb.height,
+            avoid,
+            gap,
+            'album-clear-' + attempt + '-' + s,
+            scale,
+          )
+          if (hasOverlap(cand)) continue // 有重叠的候选直接淘汰
+          const sc = score(cand)
+          if (sc > bestS) {
+            bestS = sc
+            bestForScale = cand
+            if (sc >= 40) break
+          }
+        }
+        if (bestForScale) {
+          best = bestForScale
+          break // 找到无重叠且评分良好的解，收工
+        }
+        scale *= 0.92 // 这一档尺寸排不出无重叠方案 → 整体缩小 8% 再试
+      }
+      // 极端兜底：即使 12 档缩放仍无解（理论上不会），用最后一版强制展开
+      if (best.length === 0) {
+        best = layoutWall(
           bb.width,
           bb.height,
           avoid,
           gap,
-          'album-clear-' + s,
+          'album-base',
+          scale,
         )
-        const sc = score(cand)
-        if (sc > bestS) {
-          bestS = sc
-          best = cand
-          if (sc >= 40) break
-        }
       }
       setTiles(best)
-    })
-    return () => cancelAnimationFrame(frame)
+    }
+
+    const frame = requestAnimationFrame(compute)
+    // 视口尺寸变化（盒高是 vh 单位）时重排，保证任何屏幕下都不重叠
+    const ro = new ResizeObserver(() => compute())
+    ro.observe(board)
+    const onResize = () => compute()
+    window.addEventListener('resize', onResize)
+    return () => {
+      cancelAnimationFrame(frame)
+      ro.disconnect()
+      window.removeEventListener('resize', onResize)
+    }
   }, [])
 
   return (
@@ -328,7 +390,7 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             <DraggablePhoto
               key={SHOTS[i]}
               src={SHOTS[i]}
-              persistId={`photo-intro-${i + 1}`}
+              persistId={`photo-intro-v2-${i + 1}`}
               alt={`摄影随拍 ${i + 1}`}
               nativeW={d.w}
               nativeH={d.h}
@@ -354,10 +416,13 @@ export default function PhotoIntroStage({ onBegin }: Props) {
             className="flex flex-col items-center gap-3 text-center"
           >
             <p className="max-w-[430px] text-[clamp(12.5px,1.55vw,14px)] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              我喜欢拿着相机去探索世界，也会用相机发现每个人不同的美。也许是一次回眸、一束落在脸上的光，一个没有刻意准备的笑，甚至某个短暂而安静的瞬间。摄影于我而言，是把这些转瞬即逝的片刻留下来。
+              我喜欢拿着相机去探索世界，也会用相机发现每个人不同的美。
             </p>
             <p className="max-w-[430px] text-[clamp(12.5px,1.55vw,14px)] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
-              镜头只是让我有机会，在时间经过之前，看见它。
+              摄影于我而言，是把那些转瞬即逝的片刻留下来。
+            </p>
+            <p className="max-w-[430px] text-[clamp(12.5px,1.55vw,14px)] font-semibold leading-7 tracking-wide text-[#3b2f1e] [filter:drop-shadow(0_1px_8px_rgba(255,250,242,0.95))]">
+              镜头让我有机会，在时间经过之前，看见它。
             </p>
             <button
               onClick={onBegin}
