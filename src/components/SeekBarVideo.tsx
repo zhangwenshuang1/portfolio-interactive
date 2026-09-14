@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 
 interface SeekBarVideoProps {
   src: string
+  /** 封面图（视频未加载时显示） */
+  poster?: string
   className?: string
   /** 是否自动播放（默认 true） */
   autoPlay?: boolean
@@ -40,6 +42,7 @@ const fmt = (t: number) => {
  */
 export default function SeekBarVideo({
   src,
+  poster,
   className = '',
   autoPlay = true,
   loop = true,
@@ -183,6 +186,7 @@ export default function SeekBarVideo({
             ref={videoRef}
             className={className}
             src={src}
+            poster={poster}
             autoPlay={autoPlay}
             loop={loop}
             muted={muted}
