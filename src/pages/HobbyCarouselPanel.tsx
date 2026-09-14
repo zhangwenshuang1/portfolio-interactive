@@ -69,15 +69,10 @@ export default function HobbyCarouselPanel({ puzzle, onClose }: PanelProps) {
             type="button"
             onClick={handleClose}
             aria-label="退出"
-            className="font-cartoon-latin group flex items-center gap-2 rounded-full border border-[#a8763a]/45 bg-white/60 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#7a5528] shadow-[0_6px_18px_-8px_rgba(90,60,25,0.6)] backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-[#c1682f] hover:bg-[#fff3dc] hover:text-[#a34f1c] hover:shadow-[0_10px_24px_-8px_rgba(150,90,35,0.7)]"
+            title="退出（Esc）"
+            className="grid h-11 w-11 flex-none place-items-center rounded-full border border-[#a8763a]/45 bg-white/70 text-[17px] leading-none text-[#7a5528] shadow-[0_6px_18px_-8px_rgba(90,60,25,0.6)] backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-[#c1682f] hover:bg-[#fff3dc] hover:text-[#a34f1c]"
           >
-            <span
-              aria-hidden
-              className="grid h-5 w-5 place-items-center rounded-full bg-[#e8d3ac] text-[13px] font-black leading-none text-[#7a5528] transition-colors group-hover:bg-[#f0b45a] group-hover:text-[#5a3a12]"
-            >
-              ×
-            </span>
-            退出
+            ✕
           </button>
         </div>
       </motion.div>

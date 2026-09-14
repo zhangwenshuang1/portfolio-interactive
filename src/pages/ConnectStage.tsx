@@ -204,19 +204,14 @@ export default function ConnectStage({ onClose }: StageProps) {
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      {/* —— 右上角退出按钮：圆形小图标，悬停时向右展开文字，不遮挡书页 —— */}
+      {/* —— 右上角退出按钮：一个 ❌ —— */}
       <button
         onClick={onClose}
         aria-label="退出"
         title="退出（Esc）"
-        className="group absolute -right-2 -top-2 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[#c9a86a]/50 bg-[#fbf4e6]/90 text-[#8a6a44] shadow-[0_6px_18px_rgba(80,60,30,0.22)] backdrop-blur transition-all duration-300 ease-out hover:w-[112px] hover:border-[#b4925a]/70 hover:bg-white hover:text-[#6b5636] hover:shadow-[0_8px_22px_rgba(80,60,30,0.3)]"
+        className="absolute -right-2 -top-2 z-30 grid h-11 w-11 place-items-center rounded-full border border-[#c9a86a]/50 bg-[#fbf4e6]/90 text-[17px] leading-none text-[#8a6a44] shadow-[0_6px_18px_rgba(80,60,30,0.22)] backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-[#b4925a]/70 hover:bg-white hover:text-[#6b5636] hover:shadow-[0_8px_22px_rgba(80,60,30,0.3)]"
       >
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[17px] leading-none transition-all duration-300 group-hover:left-4 group-hover:-translate-x-0">
-          ✕
-        </span>
-        <span className="font-cartoon-latin absolute right-4 whitespace-nowrap text-[11px] font-black uppercase tracking-[0.18em] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-          退出
-        </span>
+        ✕
       </button>
 
       {/* —— 书页主体 —— */}

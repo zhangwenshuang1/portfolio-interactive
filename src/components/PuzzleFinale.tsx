@@ -58,9 +58,9 @@ function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
 }
 
 // 第七块拼图：和前面六块完全同源的拼图形状（440×440，四周带凸齿/凹槽），
-// 一块正方形、四边都有咬合；翻转过来后背面只有一句话。
+// 尺寸也与六块一致，看起来就是同一套拼图里的最后一块。
 const PIECE_SHAPE =
-  'path("M 0 0 L 180 0 A 40 40 0 0 1 260 0 L 440 0 L 440 180 A 40 40 0 0 1 440 260 L 440 440 L 260 440 A 40 40 0 0 1 180 440 L 0 440 L 0 260 A 40 40 0 0 1 0 180 Z")'
+  'path("M 0 0 L 180 0 A 40 40 0 0 1 260 0 L 440 0 L 440 180 A 40 40 0 0 1 440 260 L 440 440 L 260 440 A 40 40 0 0 0 180 440 L 0 440 L 0 260 A 40 40 0 0 0 0 180 Z")'
 
 function PuzzleFinale({
   onReplay,
@@ -123,7 +123,7 @@ function PuzzleFinale({
             exit={{ opacity: 0 }}
           >
             <motion.div
-              className="relative aspect-square w-[min(46vh,300px)] sm:w-[min(52vh,360px)]"
+              className="relative h-[440px] w-[440px]"
               style={{ transformStyle: 'preserve-3d' }}
               initial={{ rotateY: 0 }}
               animate={{ rotateY: 180 }}
