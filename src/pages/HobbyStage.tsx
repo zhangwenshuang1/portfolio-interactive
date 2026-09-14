@@ -102,6 +102,8 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
   const [vp, setVp] = useState({ w: 1440, h: 900 })
   // 每张照片的原始宽高比（宽 / 高），用来在不改变比例的前提下计算它能占多宽
   const [ratios, setRatios] = useState<Record<string, number>>({})
+  // 已「读取」过的兴趣：一旦点亮过就永久保持高亮
+  const [seen, setSeen] = useState<Record<string, boolean>>({})
 
   // 一打开就播放「卷轴展开」动画
   useEffect(() => {
@@ -193,6 +195,8 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
   const enter = (key: string) => {
     if (timerRef.current) window.clearTimeout(timerRef.current)
     setActive(key)
+    // 一旦读取过，就永久点亮（不会因为鼠标移开而熄灭）
+    setSeen((cur) => (cur[key] ? cur : { ...cur, [key]: true }))
   }
   const leave = () => {
     if (timerRef.current) window.clearTimeout(timerRef.current)
@@ -273,6 +277,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
             {HOBBIES.map((h, i) => {
               const next = HOBBIES[(i + 1) % HOBBIES.length]
               const on = active === h.key || active === next.key
+              const lit = !!seen[h.key] && !!seen[next.key]
               return (
                 <line
                   key={h.key}
@@ -280,8 +285,8 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
                   y1={h.y}
                   x2={next.x}
                   y2={next.y}
-                  stroke={on ? 'rgba(180,86,43,0.75)' : 'rgba(120,85,40,0.28)'}
-                  strokeWidth={on ? 0.5 : 0.3}
+                  stroke={on ? 'rgba(180,86,43,0.75)' : lit ? 'rgba(214,150,70,0.5)' : 'rgba(120,85,40,0.22)'}
+                  strokeWidth={on ? 0.5 : lit ? 0.4 : 0.3}
                   strokeDasharray="2 2"
                   vectorEffect="non-scaling-stroke"
                   style={{ transition: 'stroke 0.3s, stroke-width 0.3s' }}
@@ -293,6 +298,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
           {/* 兴趣节点 */}
           {HOBBIES.map((h, i) => {
             const isOn = active === h.key
+            const isSeen = !!seen[h.key]
             return (
               <motion.button
                 key={h.key}
@@ -313,25 +319,61 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
                 style={{ left: `${h.x}%`, top: `${h.y}%` }}
               >
                 <motion.div
-                  animate={{
-                    scale: isOn ? 1.12 : 1,
-                    boxShadow: isOn
-                      ? '0 0 0 6px rgba(255,196,88,0.35), 0 0 34px 8px rgba(246,180,62,0.85)'
-                      : '0 4px 14px 0 rgba(80,50,20,0.35), 0 0 0 0 rgba(246,180,62,0)',
-                  }}
+                  animate={
+                    isOn
+                      ? {
+                          scale: 1.12,
+                          boxShadow:
+                            '0 0 0 6px rgba(255,196,88,0.35), 0 0 34px 8px rgba(246,180,62,0.85)',
+                        }
+                      : isSeen
+                        ? {
+                            scale: 1,
+                            boxShadow:
+                              '0 0 0 4px rgba(255,212,130,0.28), 0 0 22px 4px rgba(246,190,90,0.55)',
+                          }
+                        : {
+                            scale: 1,
+                            boxShadow: '0 4px 14px 0 rgba(80,50,20,0.25)',
+                          }
+                  }
                   transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-                  className={`flex h-16 w-16 flex-col items-center justify-center rounded-2xl border-2 backdrop-blur-sm sm:h-20 sm:w-20 ${
+                  className={`relative flex h-16 w-16 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 backdrop-blur-sm transition-colors duration-300 sm:h-20 sm:w-20 ${
                     isOn
                       ? 'border-[#f0a93c] bg-[#fff8e6]/95'
-                      : 'border-[#b08a52]/70 bg-[#fffaf0]/85'
+                      : isSeen
+                        ? 'border-[#e2b96a] bg-[#fff6df]/92'
+                        : 'border-[#b9b1a4]/70 bg-[#e8e3d8]/80'
                   }`}
                 >
-                  <span className={`text-2xl sm:text-3xl ${isOn ? 'animate-pulse' : ''}`}>
+                  {/* 已读取的图标持续发光：外圈柔和呼吸光 */}
+                  {isSeen && (
+                    <motion.span
+                      aria-hidden
+                      className="pointer-events-none absolute inset-0 rounded-2xl"
+                      animate={{
+                        opacity: isOn ? [0.85, 1, 0.85] : [0.5, 0.8, 0.5],
+                        boxShadow: isOn
+                          ? '0 0 30px 8px rgba(246,180,62,0.75)'
+                          : '0 0 16px 3px rgba(246,190,90,0.45)',
+                      }}
+                      transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
+                    />
+                  )}
+                  <span
+                    className={`text-2xl transition-all duration-300 sm:text-3xl ${
+                      isSeen ? '' : 'grayscale opacity-45'
+                    } ${isOn ? 'animate-pulse' : ''}`}
+                  >
                     {h.emoji}
                   </span>
                   <span
-                    className={`font-cartoon-latin mt-0.5 text-[9px] font-bold tracking-[0.18em] sm:text-[10px] ${
-                      isOn ? 'text-[#8a4a12]' : 'text-[#9b7c50]'
+                    className={`font-cartoon-latin mt-0.5 text-[9px] font-bold tracking-[0.18em] transition-colors duration-300 sm:text-[10px] ${
+                      isOn
+                        ? 'text-[#8a4a12]'
+                        : isSeen
+                          ? 'text-[#a07a3c]'
+                          : 'text-[#9a958c]'
                     }`}
                   >
                     {h.en}
