@@ -50,12 +50,12 @@ interface Bts {
 }
 
 const BTS: Bts[] = [
-  { src: '/brand/bts/001.webp', en: 'SHOOTING DAY', cn: '品牌视频拍摄现场' },
-  { src: '/brand/bts/002.webp', en: 'STORYBOARD', cn: '分镜与脚本讨论' },
-  { src: '/brand/bts/003.webp', en: 'ON SET', cn: '跟组拍摄花絮' },
-  { src: '/brand/bts/004.webp', en: 'AI WORKFLOW', cn: 'AI 生成流程调试' },
-  { src: '/brand/bts/005.webp', en: 'ANNUAL EVENT', cn: '品牌年度活动现场' },
-  { src: '/brand/bts/006.webp', en: 'TEAM', cn: '团队协作日常' },
+  { src: '/brand/bts/001.webp', en: 'ANNIVERSARY', cn: '公司周年庆活动' },
+  { src: '/brand/bts/002.webp', en: 'DAY ONE', cn: '入职第一天' },
+  { src: '/brand/bts/003.webp', en: 'OVERTIME', cn: '剪辑后期加班' },
+  { src: '/brand/bts/004.webp', en: 'DISCUSSION', cn: '开会讨论' },
+  { src: '/brand/bts/005.webp', en: 'AI TOOLS', cn: '摸索 AI 创作工具' },
+  { src: '/brand/bts/006.webp', en: 'LIVE EVENT', cn: '公司发布会现场直播' },
 ]
 
 const PHYSICAL: Array<[number, number]> = [
