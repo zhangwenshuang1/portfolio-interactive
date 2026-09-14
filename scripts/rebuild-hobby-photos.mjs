@@ -1,7 +1,7 @@
 // 一次性脚本：从原始素材重建 public/hobby 下的攀岩 / 篮球照片。
 // 要求：全部输出为竖屏 webp；横图先按 3:4 居中裁剪，再统一压到长边 1400px。
 import sharp from 'sharp'
-import { mkdir } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 
 const SRC = {
@@ -20,26 +20,24 @@ const SRC = {
 const OUT_DIR = path.resolve('public/hobby')
 
 async function buildOne(src, outPath) {
-  const meta = await sharp(src).metadata()
-  const isPortrait = meta.height >= meta.width
+  // 关键：.rotate() 不带参数会按照 EXIF orientation 自动摆正。
+  // 手机竖拍的照片常以横图存储 + EXIF 旋转标记，必须先摆正再判断方向。
+  // 这里先把摆正后的图编码成 buffer，用它的真实尺寸来判断，绝不裁剪。
+  const upright = await sharp(src)
+    .rotate()
+    .resize({ height: 1400, fit: 'inside', withoutEnlargement: true })
+    .webp({ quality: 84, effort: 5 })
+    .toBuffer()
 
-  // 目标：输出固定为竖屏 3:4（宽 1050 × 高 1400）。
-  // - 横图 / 方图：用 cover + attention 自动聚焦主体做居中裁剪，永不拉伸。
-  // - 竖图：先用 contain 完整放进 3:4 画布，多余区域留白补边，同样不改变画面比例。
-  const W = 1050
-  const H = 1400
+  const info = await sharp(upright).metadata()
+  if (info.height < info.width) {
+    throw new Error(
+      `${path.basename(src)} 摆正后仍是横图 (${info.width}x${info.height})，请检查原图`,
+    )
+  }
 
-  const pipeline = sharp(src)
-    .resize(W, H, {
-      fit: isPortrait ? 'contain' : 'cover',
-      position: isPortrait ? 'center' : 'attention',
-      background: { r: 244, g: 234, b: 212, alpha: 1 }, // 与卡片底色一致，补边不显突兀
-      withoutEnlargement: false,
-    })
-    .webp({ quality: 82, effort: 5 })
-
-  const out = await pipeline.toFile(outPath)
-  return out
+  await writeFile(outPath, upright)
+  return { size: upright.length }
 }
 
 await mkdir(OUT_DIR, { recursive: true })
@@ -57,7 +55,7 @@ for (const [hobby, files] of Object.entries(SRC)) {
       h: m.height,
       ratio: +(m.width / m.height).toFixed(3),
       orientation: portrait ? '竖屏' : '横屏',
-      kb: Math.round(r.size / 1024),
+      kb: Math.round((r.size ?? 0) / 1024),
     })
   }
 }
