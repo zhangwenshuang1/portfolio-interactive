@@ -365,6 +365,7 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
               key={SHOTS[i]}
               src={SHOTS[i]}
               persistId={`ent-bts-${i + 1}`}
+              rememberPosition={false}
               alt={`第 ${num} 张幕后照片`}
               nativeW={d.w}
               nativeH={d.h}

@@ -9,6 +9,11 @@ interface DraggablePhotoProps {
    * 传入后，用户拖动过的位置会被记住（存浏览器本地），下次打开沿用。
    */
   persistId?: string
+  /**
+   * 是否记住拖动位置（默认 true）。
+   * 设为 false 时：不读取也不写入浏览器本地存储，每次打开都回到自动排版。
+   */
+  rememberPosition?: boolean
   /** 无障碍描述 */
   alt?: string
   /** 原图宽高，用来保持原始比例（零裁切） */
@@ -42,6 +47,7 @@ interface DraggablePhotoProps {
 export default function DraggablePhoto({
   src,
   persistId,
+  rememberPosition = true,
   alt = '',
   nativeW,
   nativeH,
@@ -64,12 +70,22 @@ export default function DraggablePhoto({
   const [resetKey, setResetKey] = useState(0)
   const figRef = useRef<HTMLElement | null>(null)
 
-  // 键名：按 persistId 区分每张照片各自记住位置
-  const storageKey = persistId ? `dragpos:${persistId}` : null
+  // 键名：按 persistId 区分每张照片各自记住位置（关闭记忆时为 null，不读也不写）
+  const storageKey = persistId && rememberPosition ? `dragpos:${persistId}` : null
 
   // 首次挂载：若本地存过位置，就沿用（优先于默认排版）。
   useEffect(() => {
-    if (!storageKey) return
+    if (!storageKey) {
+      // 关闭记忆：顺手清掉旧的本地位置，避免以后重新开启时被旧数据干扰
+      if (persistId && !rememberPosition) {
+        try {
+          localStorage.removeItem(`dragpos:${persistId}`)
+        } catch {
+          /* 忽略 */
+        }
+      }
+      return
+    }
     try {
       const raw = localStorage.getItem(storageKey)
       if (raw) {
@@ -81,7 +97,7 @@ export default function DraggablePhoto({
     } catch {
       /* 忽略损坏的本地数据 */
     }
-  }, [storageKey])
+  }, [storageKey, persistId, rememberPosition])
 
   /** 拖动结束：把「初始位置 + 本次位移」算成新的绝对位置，存下并让元素按新 left/top 重挂载 */
   const onDragEnd = (_e: unknown, info: { offset: { x: number; y: number } }) => {
