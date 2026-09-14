@@ -57,33 +57,38 @@ function RevealPhoto({ bounds }: { bounds: PhotoBounds }) {
   )
 }
 
+// 第七块拼图：和前面六块完全同源的拼图形状（440×440，四周带凸齿/凹槽），
+// 一块正方形、四边都有咬合；翻转过来后背面只有一句话。
+const PIECE_SHAPE =
+  'path("M 0 0 L 180 0 A 40 40 0 0 1 260 0 L 440 0 L 440 180 A 40 40 0 0 1 440 260 L 440 440 L 260 440 A 40 40 0 0 1 180 440 L 0 440 L 0 260 A 40 40 0 0 1 0 180 Z")'
+
 function PuzzleFinale({
   onReplay,
   onReveal,
   photoBounds = { left: 60, top: 50, width: 1320, height: 880 },
 }: PuzzleFinaleProps) {
-  const [stage, setStage] = useState<'photo' | 'missing' | 'replay'>('photo')
+  const [stage, setStage] = useState<'photo' | 'piece' | 'replay'>('photo')
   const revealed = useRef(false)
 
   // 时间轴驱动阶段推进（这是"网站最后的叙事"，不是系统报错）
-  // photo: 聚拢好的拼图卡片翻转成完整照片 → 停留片刻
-  // missing: 猛然弹出 "ONE PIECE IS MISSING"，一块空白拼图缓缓翻转露出背面文字 → 停留 5 秒
+  // photo:  聚拢好的拼图卡片翻转成完整照片 → 停留片刻
+  // piece:  整块照片翻过去，露出第七块拼图的背面文字 → 停留片刻
   // replay: 出现 "重新认识我" 按钮
   useEffect(() => {
     const timers: ReturnType<typeof setTimeout>[] = []
-    // 照片浮现(延时0.15+淡入1.1≈1.3s)后留足 2s 看合照，再转入“缺一块”叙事
-    timers.push(setTimeout(() => setStage('missing'), 3300))
-    timers.push(setTimeout(() => setStage('replay'), 9100)) // 缺失叙事停留
+    // 照片浮现(延时0.15+淡入1.1≈1.3s)后留足 2s 看合照，再翻转
+    timers.push(setTimeout(() => setStage('piece'), 3300))
+    timers.push(setTimeout(() => setStage('replay'), 9100)) // 背面文字停留
     return () => timers.forEach(clearTimeout)
   }, [])
 
   // 翻转完成 → 通知上层（可在背面文字露出的同时触发）
   useEffect(() => {
-    if (stage === 'missing' && !revealed.current) {
+    if (stage === 'piece' && !revealed.current) {
       const t = setTimeout(() => {
         revealed.current = true
         onReveal?.()
-      }, 2600)
+      }, 2200)
       return () => clearTimeout(t)
     }
   }, [stage, onReveal])
@@ -107,72 +112,48 @@ function PuzzleFinale({
           </motion.div>
         )}
 
-        {/* 阶段二：一块拼图不见了——弹出叙事字幕 + 空白拼图缓缓翻转 */}
-        {stage === 'missing' && (
+        {/* 阶段二：整块照片作为"第七块拼图"翻转，背面只有一句话 */}
+        {stage === 'piece' && (
           <motion.div
-            key="missing"
-            className="relative flex h-full w-full flex-col items-center justify-center bg-[#f6f3ee]/92"
+            key="piece"
+            className="relative flex h-full w-full items-center justify-center bg-[#f6f3ee]/92"
             style={{ perspective: 1200 }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
           >
-            {/* "最后一格"叙事弹窗：让它像电影落幕，而不是系统出错 */}
             <motion.div
-              initial={{ scale: 0.7, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              transition={{ type: 'spring', stiffness: 200, damping: 16 }}
-              className="relative z-10 mb-10 flex flex-col items-center rounded-[28px] bg-gradient-to-br from-[#1f2430] to-[#0f1118] px-12 py-9 text-center shadow-[0_30px_70px_rgba(15,17,24,0.5)]"
-            >
-              <div className="absolute -right-3 -top-3 flex h-9 w-9 items-center justify-center rounded-full bg-[#ff5d5d] text-base text-white shadow-lg">
-                ⋁
-              </div>
-              <span className="text-3xl">🧩</span>
-              <p className="mt-3 text-3xl font-black uppercase tracking-[0.18em] text-[#f5efe2]">
-                One&nbsp;Piece&nbsp;Is&nbsp;Missing.
-              </p>
-              <p className="mt-3 max-w-xs text-sm leading-relaxed text-[#9aa7bd]">
-                我的故事还差最后一块。<br />不是遗失，而是它，正在被制作。
-              </p>
-            </motion.div>
-
-            {/* 空白拼图：缓慢翻转，背面只有一句话 */}
-            <motion.div
-              className="relative flex aspect-square w-[300px] items-center justify-center"
+              className="relative aspect-square w-[min(46vh,300px)] sm:w-[min(52vh,360px)]"
               style={{ transformStyle: 'preserve-3d' }}
               initial={{ rotateY: 0 }}
               animate={{ rotateY: 180 }}
-              transition={{ duration: 2.2, ease: [0.6, 0.05, 0.1, 0.9], delay: 0.6 }}
+              transition={{ duration: 2.2, ease: [0.6, 0.05, 0.1, 0.9], delay: 0.4 }}
             >
-              {/* 正面：空白拼图（缺掉的一格，刻意留白） */}
-              <motion.div
+              {/* 正面：完好的拼图（与前面六块同一套暖色质感） */}
+              <div
+                className="absolute inset-0"
+                style={{ backfaceVisibility: 'hidden', clipPath: PIECE_SHAPE }}
+              >
+                <div className="h-full w-full bg-gradient-to-br from-[#f7d6a4] via-[#f0b45a] to-[#e2943c]" />
+                <div className="absolute inset-0 bg-gradient-to-br from-white/25 to-transparent" />
+              </div>
+
+              {/* 背面：翻到底才露出的那句话 */}
+              <div
                 className="absolute inset-0"
                 style={{
                   backfaceVisibility: 'hidden',
-                  clipPath:
-                    'path("M 30 30 L 310 30 A 30 30 0 0 0 310 90 L 310 310 L 200 310 A 30 30 0 0 1 140 310 L 30 310 Z")',
-                }}
-              >
-                <div className="h-full w-full bg-gradient-to-br from-[#efe9df] to-[#e0d9cd] shadow-inner" />
-              </motion.div>
-
-              {/* 背面：翻到底才露出的那句话 */}
-              <motion.div
-                className="absolute inset-0 flex items-center justify-center"
-                style={{
-                  backfaceVisibility: 'hidden',
-                  rotateY: 180,
-                  clipPath:
-                    'path("M 30 30 L 310 30 A 30 30 0 0 1 310 90 L 310 310 L 200 310 A 30 30 0 0 0 140 310 L 30 310 Z")',
+                  transform: 'rotateY(180deg)',
+                  clipPath: PIECE_SHAPE,
                 }}
               >
                 <div className="h-full w-full bg-gradient-to-br from-[#1f2430] to-[#0f1118]" />
-                <div className="absolute px-8 text-center">
-                  <p className="text-2xl font-bold leading-snug text-[#f5efe2]">
+                <div className="absolute inset-0 flex items-center justify-center px-10 text-center">
+                  <p className="font-cartoon-latin text-xl font-bold leading-snug text-[#f5efe2] sm:text-2xl">
                     The next piece is still being made.
                   </p>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         )}
