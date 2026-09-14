@@ -150,6 +150,19 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
   // 已知则用实测原始比例，否则回退到照片尺寸表
   const ratioOf = (p: string) => ratios[p] ?? PHOTO_RATIO[p] ?? 1
 
+  // 图标向内收缩：把落在画面边缘的图标拉进安全区（保证完整可见，不压边、不溢出） */
+  const NODE_HALF = 56 // 图标半径（80px 移动端 / 112px 桌面端取大者的一半）
+  const safe = {
+    x: ((NODE_HALF + 14) / Math.max(1, panel.w)) * 100,
+    y: ((NODE_HALF + 14) / Math.max(1, panel.h)) * 100,
+  }
+  const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v))
+  const nodePos = (p: { x: number; y: number }) => ({
+    // 把地标坐标往画面中心收 8%，同时强制落在安全区内
+    x: clamp(p.x + (50 - p.x) * 0.08, safe.x, 100 - safe.x),
+    y: clamp(p.y + (50 - p.y) * 0.08, safe.y, 100 - safe.y),
+  })
+
   // 照片统一高度：宽度由图片自身比例决定，所以比例永远不会被改变；
   // 弹窗（方框）不用预估宽度，而是按内容收缩，恰好框住照片。
   // 高度从基准值逐步降低，直到同时满足：所有照片并排一行放得下、
@@ -278,13 +291,15 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
               const next = HOBBIES[(i + 1) % HOBBIES.length]
               const on = active === h.key || active === next.key
               const lit = !!seen[h.key] && !!seen[next.key]
+              const a = nodePos(h)
+              const b = nodePos(next)
               return (
                 <line
                   key={h.key}
-                  x1={h.x}
-                  y1={h.y}
-                  x2={next.x}
-                  y2={next.y}
+                  x1={a.x}
+                  y1={a.y}
+                  x2={b.x}
+                  y2={b.y}
                   stroke={on ? 'rgba(180,86,43,0.75)' : lit ? 'rgba(214,150,70,0.5)' : 'rgba(120,85,40,0.22)'}
                   strokeWidth={on ? 0.5 : lit ? 0.4 : 0.3}
                   strokeDasharray="2 2"
@@ -299,6 +314,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
           {HOBBIES.map((h, i) => {
             const isOn = active === h.key
             const isSeen = !!seen[h.key]
+            const pos = nodePos(h)
             return (
               <motion.button
                 key={h.key}
@@ -316,7 +332,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
                 onClick={() => enter(h.key)}
                 aria-label={`${h.cn} ${h.en}`}
                 className="group absolute z-20 -translate-x-1/2 -translate-y-1/2"
-                style={{ left: `${h.x}%`, top: `${h.y}%` }}
+                style={{ left: `${pos.x}%`, top: `${pos.y}%` }}
               >
                 {/* 上下轻微浮动：让整块图标像悬在地图上，错开相位避免齐刷刷 */}
                 <motion.div
