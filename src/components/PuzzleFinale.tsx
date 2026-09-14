@@ -181,9 +181,6 @@ function PuzzleFinale({
                 <br />
                 因为我的故事，还有无限可能。
               </p>
-              <p className="mt-3 max-w-md text-sm font-medium leading-relaxed text-[#6f6355]">
-                下一块会拼在哪里，连我自己都还在期待。
-              </p>
               <button
                 onClick={onReplay}
                 className="mt-8 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff7eb6] to-[#ffd54a] px-9 py-4 text-lg font-black text-white shadow-[0_16px_30px_rgba(255,126,182,0.4)] transition hover:scale-105"
