@@ -19,6 +19,8 @@ interface DraggablePhotoProps {
   y: number
   /** 显示宽度（px） */
   w: number
+  /** 可选：显示高度（px）。传入后统一裁切成该高度，便于整齐排布；不传则按原图比例自适应 */
+  h?: number
   /** 入场动画延迟（秒） */
   delay?: number
   /** 入场方式 */
@@ -46,6 +48,7 @@ export default function DraggablePhoto({
   x,
   y,
   w,
+  h,
   delay = 0,
   from = 'scale',
   glow = 'warm',
@@ -169,7 +172,8 @@ export default function DraggablePhoto({
             loading="lazy"
             decoding="async"
             draggable={false}
-            className={`relative block h-auto w-full transition-[filter,transform] duration-300 ease-out group-hover:brightness-110 ${imgClassName}`}
+            style={h ? { height: h, objectFit: 'cover' } : undefined}
+            className={`relative block w-full transition-[filter,transform] duration-300 ease-out group-hover:brightness-110 ${h ? '' : 'h-auto'} ${imgClassName}`}
           />
           {children}
         </div>

@@ -20,64 +20,42 @@ const pad = (n: number) => String(n).padStart(3, '0')
 
 // —— 幕后照片素材库 ——
 // 每张缩略图导入时已压到最长边 900px 并依次命名 001..014，宽高遵循原图比例（零裁切）。
-// 顺序对应桌面「综艺」文件夹里照片的按名排序；编号固定，之后你提到的“第几张”都以此为准。
-// 目前版面先展示其中的 11 张（见 SHOWN = 001..011），末尾的 012–014 备用轮换。
-const THUMBS = Array.from({ length: 14 }, (_, i) => ({
-  src: `/ent-bts/thumbs/${pad(i + 1)}.jpg`,
-  w: 0,
-  h: 0,
-}))
-// 每张缩略图的真实宽高（服务器上已生成的 001–014）：
+// 版面按下面的 NUMBER 显式给出展示顺序（第 10 张已按需求删除）。
+// 每张缩略图的真实宽高（服务器上已生成的 001–014）。
+// 版面按「横图上下各 2、竖图左右各 3」的环形排布：
+//   横图 = 004 011 008 009（原第 4、8、9、11 张，编号见下）
+//   竖图 = 001 002 003 005 006 007（原第 1、2、3、5、6、7 张；第 10 张已按需求删除）
+// 因此这里不再直接用 001–011 的顺序，而是显式给出「展示顺序」。
 const PHYSICAL: Array<[number, number]> = [
-  [675, 900], //  001 竖
-  [676, 900], //  002 竖
-  [675, 900], //  003 竖
-  [900, 600], //  004 横 3:2
-  [675, 900], //  005 竖
-  [675, 900], //  006 竖
-  [675, 900], //  007 竖
-  [900, 675], //  008 横 4:3
-  [900, 675], //  009 横 4:3
-  [675, 900], //  010 竖
-  [900, 506], //  011 横 16:9
-  [900, 675], //  012 横 4:3
-  [675, 900], //  013 竖
-  [675, 900], //  014 竖
+  [900, 506], //  ① 011 横 16:9 → 上 1
+  [900, 675], //  ② 008 横 4:3  → 上 2
+  [900, 600], //  ③ 004 横 3:2  → 下 1
+  [900, 675], //  ④ 009 横 4:3  → 下 2
+  [675, 900], //  ⑤ 001 竖      → 左 1
+  [676, 900], //  ⑥ 002 竖      → 左 2
+  [675, 900], //  ⑦ 003 竖      → 左 3
+  [675, 900], //  ⑧ 005 竖      → 右 1
+  [675, 900], //  ⑨ 006 竖      → 右 2
+  [675, 900], //  ⑩ 007 竖      → 右 3
 ]
-// 本版稳定展示的张数（在 001–014 中取前 SHOWN_AB 张，编号可见且固定）
-const SHOWN = 11
-const SHOTS = THUMBS.slice(0, SHOWN).map((t) => t.src)
-const NATIVE: Array<{ w: number; h: number }> = PHYSICAL.slice(0, SHOWN).map(
-  ([w, h]) => ({ w, h }),
-)
+// 展示顺序对应的原始编号（1-based，用于角标显示；第 10 张已删）
+const NUMBER = [11, 8, 4, 9, 1, 2, 3, 5, 6, 7]
+const SHOWN = PHYSICAL.length
+const SHOTS = PHYSICAL.map((_, i) => `/ent-bts/thumbs/${pad(NUMBER[i])}.jpg`)
+const NATIVE: Array<{ w: number; h: number }> = PHYSICAL.map(([w, h]) => ({ w, h }))
 
-/** 左上锚点 + 像素宽（px）。高交给 <img> + h-auto 自然推算 */
+/** 左上锚点 + 像素宽高（px）。高度统一给定，便于排布时间隙保持一致 */
 interface Tile {
   x: number
   y: number
   w: number
+  h: number
 }
 interface Rect {
   x0: number
   y0: number
   x1: number
   y1: number
-}
-
-/** 可复现伪随机：同一尺寸下照片位置稳定，不会每次重排 */
-function seededRand(seedKey: string) {
-  let h = 2166136261
-  for (let i = 0; i < seedKey.length; i++) {
-    h ^= seedKey.charCodeAt(i)
-    h = Math.imul(h, 16777619)
-  }
-  return () => {
-    h += 0x6d2b79f5
-    h |= 0
-    let t = Math.imul(h ^ (h >>> 15), h | 1)
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61)
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
-  }
 }
 
 /**
@@ -87,347 +65,138 @@ function layoutWall(
   BW: number,
   BH: number,
   freeRect: Rect,
-  gap: number,
-  seedKey: string,
+  _gap: number,
+  _seedKey: string,
 ): Tile[] {
-  const rand = seededRand(seedKey)
-  const padOut = Math.max(10, Math.round(BW * 0.012))
+  // 这一次不再“随机撒点”，而是按用户指定的**环形秩序**摆放：
+  //        ┌──────── 上：横图 2 张 ────────┐
+  //        │         11        08           │
+  //   左   01                              05  右
+  //   竖   02        [ 中央视频 ]         06  竖
+  //   图   03                              07  图
+  //        │         04        09           │
+  //        └──────── 下：横图 2 张 ────────┘
+  // 目标：四周任何相邻两张照片之间的空隙尽量一致。
   const out: Tile[] = []
 
+  const padOut = Math.max(10, Math.round(BW * 0.012))
   const edgeMinX = padOut
   const edgeMaxX = BW - padOut
   const edgeMinY = padOut
   const edgeMaxY = BH - padOut
 
-  const occ: Array<{ l: number; t: number; r: number; b: number }> = []
+  const Ht = (idx: number, w: number) =>
+    Math.round(w / (NATIVE[idx].w / NATIVE[idx].h))
 
-  const inFree = (x0: number, y0: number, x1: number, y1: number) =>
-    x0 < freeRect.x1 && x1 > freeRect.x0 && y0 < freeRect.y1 && y1 > freeRect.y0
-  const collides = (x0: number, y0: number, x1: number, y1: number) =>
-    occ.some(
-      (q) =>
-        x0 - gap < q.r && x1 + gap > q.l && y0 - gap < q.b && y1 + gap > q.t,
-    )
+  const innerLeft = freeRect.x0
+  const innerRight = freeRect.x1
+  const innerTop = freeRect.y0
+  const innerBottom = freeRect.y1
 
-  // —— 先把“新加的第 11 张”（索引 10，横图）钉在左上角，给足纸幅 ——
-  // 之后其余照片再绕着它摊开；这样它不会被后来的碰撞逻辑挤小，也不用反复挪位。
-  const HI = SHOWN - 1
-  const hiWanted = Math.round(BW * 0.22)
-  let hiPlaced = false
-  if (SHOWN > 0) {
-    const arHi = NATIVE[HI].w / NATIVE[HI].h
-    let hw = hiWanted
-    const hh = hw / arHi
-    if (hh > edgeMaxY - edgeMinY) hw = (edgeMaxY - edgeMinY) * arHi
-    const hx = edgeMinX
-    const hy = edgeMinY
-    const hW = Math.round(hw)
-    const hH = Math.round(hw / arHi)
-    out[HI] = { x: hx, y: hy, w: hW }
-    occ.push({ l: hx - gap, t: hy - gap, r: hx + hW + gap, b: hy + hH + gap })
-    hiPlaced = true
+  // ─────────────────────────────────────────────────────────────────────────
+  // 统一间隙思路：
+  //   竖列内部、横排内部、以及照片到板边，都用同一个间隙 G，视觉上最整齐。
+  //   先按「照片尽量大」定出横图 / 竖图的尺寸，再看剩余空间能给出多大的 G，
+  //   取两者的较小值，最后按该 G 落位。这样既不会把照片压得太小，
+  //   又能让各处空隙尽量接近。
+  // ─────────────────────────────────────────────────────────────────────────
+  const topIdx = [0, 1]
+  const botIdx = [2, 3]
+  const leftIdx = [4, 5, 6]
+  const rightIdx = [7, 8, 9]
+
+  const topBandH = Math.max(0, innerTop - edgeMinY)
+  const botBandH = Math.max(0, edgeMaxY - innerBottom)
+  const leftBandW = Math.max(0, innerLeft - edgeMinX)
+  const rightBandW = Math.max(0, edgeMaxX - innerRight)
+  const fullH = edgeMaxY - edgeMinY
+  const innerW = innerRight - innerLeft
+
+  const rowArMin = Math.min(...[...topIdx, ...botIdx].map((i) => NATIVE[i].w / NATIVE[i].h))
+  const colArMin = Math.min(...[...leftIdx, ...rightIdx].map((i) => NATIVE[i].w / NATIVE[i].h))
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // 目标：相邻两张照片之间的间隙尽量一致，记为 G（横排内水平、竖列内垂直）。
+  //   照片保持原始比例（不裁切），高度由宽度决定，所以 G 与尺寸互相牵制：
+  //     · 横排：横图高 rowH = rowW / rowArMin，必须 ≤ 横带高 − 2G（否则会压到视频）
+  //     · 竖列：竖图宽 colW = colH · colArMin，必须 ≤ 竖带宽 − 2G
+  //   取一个理想 G（约板宽 2.4%），再逐步缩小直到两个约束都满足。
+  //   排布时不硬撑满内宽/板高，两端留白交给居中对齐，视觉更松弛。
+  // ─────────────────────────────────────────────────────────────────────────
+  const Gtarget = Math.round(BW * 0.02)
+
+  let G = Gtarget
+  let rowW = 0
+  let colH = 0
+  let colW = 0
+  const bandRowMax = Math.max(0, Math.min(topBandH, botBandH))
+  const bandColMax = Math.max(0, Math.min(leftBandW, rightBandW))
+  for (; G >= 8; G -= 1) {
+    // 横图：高度优先用满横带（留 2G 上下余量），宽度再受内框宽度约束
+    const rowH = Math.min(bandRowMax - 2 * G, (innerW - 3 * G) / 2 / rowArMin)
+    rowW = rowH * rowArMin
+    // 竖图：宽度优先用满竖带（留 2G 左右余量），高度再受板高约束
+    colW = Math.min(bandColMax - 2 * G, (fullH - 4 * G) / 3 * colArMin)
+    colH = colW / colArMin
+    const rowOk = rowW >= BW * 0.16 && rowH >= BW * 0.06
+    const colOk = colW >= BW * 0.11 && colH >= BW * 0.15
+    if (rowOk && colOk) break
   }
+  if (G < 8) G = 8
 
+  rowW = Math.round(rowW)
+  const rowH = Math.round(rowW / rowArMin)
+  colW = Math.round(colW)
+  colH = Math.round(colW / colArMin)
+
+  const solvedRow = { w: rowW, h: rowH }
+  const solvedCol = { w: colW, h: colH }
+
+  // ── 1) 上下两条横带：各 2 张横图，水平间隙 G，整排在内框宽度内居中 ──
+  const placeRow = (idxs: number[], bandTop: number, bandBottom: number) => {
+    if (!idxs.length) return
+    const bh = Math.max(0, bandBottom - bandTop)
+    const w = solvedRow.w
+    const h = solvedRow.h
+    const contentW = w * idxs.length + G * (idxs.length - 1)
+    const startX = Math.round(edgeMinX + (BW - 2 * edgeMinX - contentW) / 2)
+    const y = Math.round(bandTop + (bh - h) / 2)
+    idxs.forEach((idx, n) => {
+      const x = Math.round(startX + n * (w + G))
+      out[idx] = { x, y, w, h }
+    })
+  }
+  placeRow(topIdx, edgeMinY, innerTop)
+  placeRow(botIdx, innerBottom, edgeMaxY)
+
+  // ── 2) 左右两条竖带：各 3 张竖图，垂直间隙 G，整列在板高内居中 ──
+  const placeCol = (idxs: number[], bandLeft: number, bandRight: number, align: 'left' | 'right') => {
+    if (!idxs.length) return
+    const bw = Math.max(0, bandRight - bandLeft)
+    const w = solvedCol.w
+    const h = solvedCol.h
+    const totalH = h * idxs.length + G * (idxs.length - 1)
+    // 竖列整体与板面垂直居中，四组照片围成一圈更整齐
+    const startY = Math.round(edgeMinY + (BH - 2 * edgeMinY - totalH) / 2)
+    const x =
+      align === 'left'
+        ? Math.round(edgeMinX + Math.max(0, (bw - w) / 2))
+        : Math.round(edgeMaxX - Math.max(0, (bw - w) / 2) - w)
+    idxs.forEach((idx, n) => {
+      const y = Math.round(startY + n * (h + G))
+      out[idx] = { x, y, w, h }
+    })
+  }
+  placeCol(leftIdx, edgeMinX, innerLeft, 'left')
+  placeCol(rightIdx, innerRight, edgeMaxX, 'right')
+
+  // ── 3) 兜底：任何一张若缺失，补一个合法位置 ──
   for (let i = 0; i < SHOWN; i++) {
-    if (hiPlaced && i === HI) continue
-    const ar = NATIVE[i].w / NATIVE[i].h
-    const isPortrait = ar < 1
-    // 张数变多后把基准纸幅调小一些：竖图约占板宽 15–21%、横图约占 17–23%，
-    // 让 10 张尽量摊满四周空白又保持中央视频仍是绝对主角
-    const w0 = BW * (isPortrait ? 0.15 + rand() * 0.06 : 0.17 + rand() * 0.06)
-    let w = w0
-    const minW = Math.max(52, w0 * (isPortrait ? 0.45 : 0.52))
-
-    let placed = false
-    for (let shrink = 0; shrink < 30 && !placed; shrink++) {
-      if (w < minW) w = minW
-      if (w > edgeMaxX - edgeMinX) w = edgeMaxX - edgeMinX
-      const h = w / ar
-      if (h > edgeMaxY - edgeMinY) {
-        w = (edgeMaxY - edgeMinY) * ar
-        continue
-      }
-      const tries = 3200 + Math.ceil((BW * BH) / (w * h)) * 60
-      for (let t = 0; t < tries && !placed; t++) {
-        const x = edgeMinX + rand() * (edgeMaxX - edgeMinX - w)
-        const y = edgeMinY + rand() * (edgeMaxY - edgeMinY - h)
-        if (inFree(x, y, x + w, y + h)) continue
-        if (collides(x, y, x + w, y + h)) continue
-        occ.push({ l: x - gap, t: y - gap, r: x + w + gap, b: y + h + gap })
-        out[i] = { x: Math.round(x), y: Math.round(y), w: Math.round(w) }
-        placed = true
-        break
-      }
-      if (!placed) w *= 0.94
-    }
-
-    if (!placed) {
-      let w2 = minW
-      let found = false
-      for (let deg = 0; deg < 8 && !found; deg++) {
-        w2 = Math.max(BW * 0.1, Math.round(w2 * 0.9))
-        if (w2 > edgeMaxX - edgeMinX) w2 = edgeMaxX - edgeMinX
-        const h2 = w2 / ar
-        if (h2 > edgeMaxY - edgeMinY) continue
-        const tries = 4200
-        for (let t = 0; t < tries && !found; t++) {
-          const x = edgeMinX + rand() * (edgeMaxX - edgeMinX - w2)
-          const y = edgeMinY + rand() * (edgeMaxY - edgeMinY - h2)
-          if (inFree(x, y, x + w2, y + h2)) continue
-          if (collides(x, y, x + w2, y + h2)) continue
-          occ.push({ l: x - gap, t: y - gap, r: x + w2 + gap, b: y + h2 + gap })
-          out[i] = { x: Math.round(x), y: Math.round(y), w: Math.round(w2) }
-          placed = true
-          found = true
-        }
-      }
-      if (!found) {
-        // 逐左移找可放坐标（极端兜底，几乎不会走到）
-        const bw = Math.max(Math.max(42, Math.round(BW * 0.08)), minW * 0.5)
-        const bh = bw / ar
-        let placedEdge = false
-        for (let k = 0; k < edgeMaxX - edgeMinX - bw && !placedEdge; k++) {
-          const x0c = edgeMinX + k
-          const y0c = edgeMinY
-          if (
-            y0c + bh <= edgeMaxY &&
-            !inFree(x0c, y0c, x0c + bw, y0c + bh) &&
-            !collides(x0c, y0c, x0c + bw, y0c + bh)
-          ) {
-            occ.push({ l: x0c - gap, t: y0c - gap, r: x0c + bw + gap, b: y0c + bh + gap })
-            out[i] = { x: Math.round(x0c), y: Math.round(y0c), w: Math.round(bw) }
-            placedEdge = true
-          }
-        }
-        if (!placedEdge) {
-          out[i] = { x: edgeMinX, y: Math.max(padOut, edgeMaxY - bh), w: Math.round(bw) }
-        }
-      }
-    }
+    if (out[i]) continue
+    const w = Math.max(48, Math.round(BW * 0.12))
+    out[i] = { x: edgeMinX, y: edgeMinY, w, h: Math.round(w / rowArMin) }
   }
-  // —— 收尾兜底（双层、可收敛）——
-  // 若 scatter ＋ 首轮轻推仍让某两张叠在一起、或某张压到中央呼吸带，
-  // 就不断把它们往最近的空处推开，推开过程保证“不制造新的叠压”；
-  // 摊都摊不开（极窄极高的窗口）时才做第二层：沿外侧整齐排成条。
-  // 无论哪种窗口，最后都保证任何两张不相叠、也不压中央视频。
-  {
-    const Ht = (o: Tile, idx: number) =>
-      Math.round(o.w / (NATIVE[idx].w / NATIVE[idx].h))
-    const overVideo = (o: Tile, idx: number) => {
-      const yb = o.y + Ht(o, idx)
-      return (
-        o.x < freeRect.x1 &&
-        o.x + o.w > freeRect.x0 &&
-        o.y < freeRect.y1 &&
-        yb > freeRect.y0
-      )
-    }
-    const pairOver = (a: Tile, ai: number, b: Tile, bi: number) => {
-      const ab = a.y + Ht(a, ai)
-      const bb = b.y + Ht(b, bi)
-      const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)
-      const oy = Math.min(ab, bb) - Math.max(a.y, b.y)
-      if (ox > 1 && oy > 1) return { ox, oy, ab, bb }
-      return null
-    }
-    const clearSpot = (o: Tile, idx: number, nx: number, ny: number) => {
-      if (
-        nx < edgeMinX ||
-        nx + o.w > edgeMaxX ||
-        ny < edgeMinY ||
-        ny + Ht(o, idx) > edgeMaxY
-      ) return false
-      const c = { x: nx, y: ny, w: o.w }
-      for (let k = 0; k < out.length; k++) {
-        if (k === idx) continue
-        if (pairOver(c, idx, out[k], k)) return false
-      }
-      return !overVideo(c, idx)
-    }
-    // assignMove：平移一个格子并（必要时）夹在板边内
-    const assignMove = (o: Tile, idx: number, dx: number, dy: number) => {
-      o.x = Math.round(o.x + dx)
-      o.y = Math.round(o.y + dy)
-      const maxX = edgeMaxX - o.w
-      const maxY = edgeMaxY - Ht(o, idx)
-      if (o.x < edgeMinX) o.x = edgeMinX
-      if (o.x > maxX) o.x = maxX
-      if (o.y < edgeMinY) o.y = edgeMinY
-      if (o.y > maxY) o.y = maxY
-    }
-
-    // 第一层：尽量就地错开（四个方向按“可行优先”挨个试，试不动就收窄）
-    const MIN = 34
-    let again = true
-    for (let cap = 0; cap < 120 && again; cap++) {
-      again = false
-      let changed = false
-      for (let i = 0; i < out.length; i++) {
-        for (let j = i + 1; j < out.length; j++) {
-          const A = out[i], B = out[j]
-          const ov = pairOver(A, i, B, j)
-          if (!ov) continue
-          const stepX = ov.ox + gap
-          const stepY = ov.oy + gap
-          const upperFirst = ov.ab <= ov.bb
-          type Cand = { o: Tile; oi: number; dx: number; dy: number }
-          const cands: Cand[] = upperFirst
-            ? [
-                { o: A, oi: i, dx: 0, dy: -stepY },
-                { o: B, oi: j, dx: 0, dy: stepY },
-                { o: B, oi: j, dx: stepX, dy: 0 },
-                { o: A, oi: i, dx: -stepX, dy: 0 },
-              ]
-            : [
-                { o: B, oi: j, dx: 0, dy: -stepY },
-                { o: A, oi: i, dx: 0, dy: stepY },
-                { o: A, oi: i, dx: -stepX, dy: 0 },
-                { o: B, oi: j, dx: stepX, dy: 0 },
-              ]
-          let done = false
-          for (const c of cands) {
-            if (clearSpot(c.o, c.oi, c.o.x + c.dx, c.o.y + c.dy)) {
-              assignMove(c.o, c.oi, c.dx, c.dy)
-              changed = true
-              done = true
-              break
-            }
-          }
-          if (!done) {
-            // 两个都缩一档，腾出空隙（同样压低自身高度）
-            // 但“新加的第 11 张”（HI）优先保住纸幅：只缩另一个，尽量不缩它
-            if (i === HI || j === HI) {
-              const other = i === HI ? B : A
-              if (other.w > MIN) { other.w = Math.max(MIN, Math.round(other.w * 0.8)); changed = true }
-            } else {
-              if (A.w > MIN) { A.w = Math.max(MIN, Math.round(A.w * 0.8)) }
-              if (B.w > MIN) { B.w = Math.max(MIN, Math.round(B.w * 0.8)) }
-              changed = true
-            }
-          }
-        }
-      }
-      // 压住中央视频的，就近挪去视频左/右/上/下任一空档
-      for (let i = 0; i < out.length; i++) {
-        const o = out[i]
-        if (!overVideo(o, i)) continue
-        const h = Ht(o, i)
-        const cand = [
-          [freeRect.x1 + gap, o.y], // 右
-          [freeRect.x0 - o.w - gap, o.y], // 左
-          [o.x, freeRect.y1 + gap], // 下
-          [o.x, freeRect.y0 - h - gap], // 上
-        ]
-        let ok = false
-        for (const [cx, cy] of cand) {
-          if (clearSpot(o, i, cx, cy)) { assignMove(o, i, cx - o.x, cy - o.y); ok = true; changed = true; break }
-        }
-        if (!ok && o.w > MIN && i !== HI) { o.w = Math.max(MIN, Math.round(o.w * 0.8)); changed = true }
-      }
-      if (changed) again = true
-    }
-
-    // 第二层：仍有个别摊不开的，沿外侧排条兜底（只在必要时启动，不影响正常摊法）
-    const stillBad = (i: number) => {
-      for (let j = 0; j < out.length; j++) {
-        if (j !== i && pairOver(out[i], i, out[j], j)) return true
-      }
-      return overVideo(out[i], i)
-    }
-    for (let guard = 0; guard < out.length + 3; guard++) {
-      let fi = -1
-      for (let i = 0; i < out.length; i++) if (stillBad(i)) { fi = i; break }
-      if (fi === -1) break
-      const o = out[fi]
-      const h = Ht(o, fi)
-      // 全板网格扫描：从左到右、从上到下找一个不压视频、不碰他片的位置
-      let placed = false
-      const stepPx = Math.max(6, Math.round(gap * 0.5))
-      const maxX = edgeMaxX - o.w
-      const maxY = edgeMaxY - h
-      for (let cy = edgeMinY; cy <= maxY + 0.001 && !placed; cy += stepPx) {
-        for (let cx = edgeMinX; cx <= maxX + 0.001; cx += stepPx) {
-          if (clearSpot(o, fi, cx, cy)) {
-            o.x = Math.round(cx)
-            o.y = Math.round(cy)
-            placed = true
-            break
-          }
-        }
-      }
-      if (!placed && o.w > MIN && fi !== HI) {
-        o.w = Math.max(MIN, Math.round(o.w * 0.7))
-      } else if (!placed) {
-        break // 已到最小仍无解：结束，避免死循环
-      }
-    }
-  }
-
-  // —— 手动微调（用户指定，编号 1-based）——
-  // 目测两排留白不均：右上「08 → 04」之间空隙偏大、下排「02 ← 06」之间空隙偏大。
-  // 按用户要求把 08 / 10 / 11 整体往右挪、06 / 07 / 09 整体往左挪，让两排分布更匀。
-  // 逐像素试探，一旦碰到邻居 / 中央视频 / 板边就立刻停住 —— 绝不会制造新的叠压。
-  {
-    const HtM = (o: Tile, idx: number) =>
-      Math.round(o.w / (NATIVE[idx].w / NATIVE[idx].h))
-    // 平移时两图之间至少保留 margin 的空隙，避免亚像素渲染造成视觉粘连
-    const MARGIN = 8
-    const hitM = (a: Tile, ai: number, b: Tile, bi: number) => {
-      const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x)
-      const oy = Math.min(a.y + HtM(a, ai), b.y + HtM(b, bi)) - Math.max(a.y, b.y)
-      return ox > -MARGIN && oy > -MARGIN
-    }
-    const legalM = (idx: number, nx: number) => {
-      const o = out[idx]
-      if (!o) return false
-      if (nx < edgeMinX || nx + o.w > edgeMaxX) return false
-      // 不得压到中央视频呼吸带
-      if (
-        nx < freeRect.x1 &&
-        nx + o.w > freeRect.x0 &&
-        o.y < freeRect.y1 &&
-        o.y + HtM(o, idx) > freeRect.y0
-      ) return false
-      for (let k = 0; k < out.length; k++) {
-        if (k === idx || !out[k]) continue
-        if (hitM({ x: nx, y: o.y, w: o.w }, idx, out[k], k)) return false
-      }
-      return true
-    }
-    /** 朝 dir 方向平移，累计位移不超过该张的预算（避免在窄窗口把照片推离原布局太远） */
-    const moved: Record<number, number> = {}
-    const shift = (idx: number, dir: 1 | -1, budgetPx: number) => {
-      const o = out[idx]
-      if (!o) return
-      const left = budgetPx - (moved[idx] ?? 0)
-      if (left <= 0) return
-      let used = 0
-      for (; used < left; used++) {
-        if (!legalM(idx, o.x + dir)) break
-        o.x += dir
-      }
-      moved[idx] = (moved[idx] ?? 0) + used
-    }
-    // 参考板宽 1086px；按比例缩放，保证不同窗口下的观感一致
-    const k = BW / 1086
-    // 08 / 10 / 11 右移、06 / 07 / 09 左移。
-    // 06 与 10 在下排相向而行、横向会互相顶住，因此分多轮小幅交替推进，
-    // 让两边都移动一点、同时保留彼此间隙；每张总位移设上限，防止窄窗口下布局被推散。
-    const LEFT: Array<[number, number]> = [
-      [5, 34],  // 06 —— 左移，靠近 02
-      [6, 78],  // 07 —— 左移，跟随 06
-      [8, 34],  // 09 —— 左移
-    ]
-    const RIGHT: Array<[number, number]> = [
-      [7, 78],  // 08 —— 右移，靠近 04
-      [10, 78], // 11 —— 右移，跟随 08
-      [9, 34],  // 10 —— 右移
-    ]
-    for (let round = 0; round < 4; round++) {
-      for (const [idx, amt] of LEFT) shift(idx, -1, Math.round((amt / 2) * k))
-      for (const [idx, amt] of RIGHT) shift(idx, 1, Math.round((amt / 2) * k))
-    }
-  }
+  void Ht
 
   return out
 }
@@ -586,25 +355,27 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
         {/* —— 幕后照片层：绕开中央视频，绝不遮挡「节目」—— 可拖动 + 点击放大 —— */}
         {tiles.map((tile, i) => {
           const d = NATIVE[i]
+          const num = NUMBER[i]
           return (
             <DraggablePhoto
               key={SHOTS[i]}
               src={SHOTS[i]}
               persistId={`ent-bts-${i + 1}`}
-              alt={`第 ${i + 1} 张幕后照片`}
+              alt={`第 ${num} 张幕后照片`}
               nativeW={d.w}
               nativeH={d.h}
               x={tile.x}
               y={tile.y}
               w={tile.w}
-              delay={1.15 + i * 0.24}
+              h={tile.h}
+              delay={1.15 + i * 0.18}
               from="rise"
               glow="neon"
               imgClassName="rounded-xl border border-white/20 drop-shadow-[0_10px_18px_rgba(0,0,0,0.5)] group-hover:scale-[1.03] group-hover:drop-shadow-[0_0_18px_rgba(255,120,160,0.5)]"
             >
               {/* 常显编号（左上角浅底数字）：方便你按编号告知我每张背后的故事 */}
               <span className="font-cartoon-latin pointer-events-none absolute left-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-md bg-black/45 px-1 text-[10.5px] font-bold text-white ring-1 ring-white/25 backdrop-blur-sm">
-                {String(i + 1).padStart(2, '0')}
+                {String(num).padStart(2, '0')}
               </span>
             </DraggablePhoto>
           )
