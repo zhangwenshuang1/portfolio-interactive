@@ -318,27 +318,62 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
                 className="group absolute z-20 -translate-x-1/2 -translate-y-1/2"
                 style={{ left: `${h.x}%`, top: `${h.y}%` }}
               >
+                {/* 上下轻微浮动：让整块图标像悬在地图上，错开相位避免齐刷刷 */}
+                <motion.div
+                  animate={{ y: rolled ? [0, -7, 0] : 0 }}
+                  transition={{
+                    duration: 3.6,
+                    repeat: Infinity,
+                    ease: 'easeInOut',
+                    delay: i * 0.42,
+                  }}
+                >
+                {/* 已读取图标外圈：两圈持续扩散的光环波纹 */}
+                {isSeen && (
+                  <>
+                    {[0, 1].map((r) => (
+                      <motion.span
+                        key={r}
+                        aria-hidden
+                        className="pointer-events-none absolute inset-0 rounded-[26px] border-2 border-[#f0b45a]"
+                        initial={{ opacity: 0.6, scale: 1 }}
+                        animate={{ opacity: [0.55, 0, 0.55], scale: [1, 1.85, 1] }}
+                        transition={{
+                          duration: isOn ? 2.2 : 3.4,
+                          repeat: Infinity,
+                          ease: 'easeOut',
+                          delay: r * (isOn ? 1.1 : 1.7) + i * 0.2,
+                        }}
+                      />
+                    ))}
+                  </>
+                )}
                 <motion.div
                   animate={
                     isOn
                       ? {
-                          scale: 1.12,
+                          scale: 1.14,
+                          rotate: [0, -2.5, 2.5, 0],
                           boxShadow:
-                            '0 0 0 6px rgba(255,196,88,0.35), 0 0 34px 8px rgba(246,180,62,0.85)',
+                            '0 0 0 8px rgba(255,196,88,0.4), 0 0 52px 14px rgba(246,180,62,0.95)',
                         }
                       : isSeen
                         ? {
                             scale: 1,
                             boxShadow:
-                              '0 0 0 4px rgba(255,212,130,0.28), 0 0 22px 4px rgba(246,190,90,0.55)',
+                              '0 0 0 5px rgba(255,212,130,0.32), 0 0 30px 7px rgba(246,190,90,0.7)',
                           }
                         : {
                             scale: 1,
                             boxShadow: '0 4px 14px 0 rgba(80,50,20,0.25)',
                           }
                   }
-                  transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-                  className={`relative flex h-16 w-16 flex-col items-center justify-center overflow-hidden rounded-2xl border-2 backdrop-blur-sm transition-colors duration-300 sm:h-20 sm:w-20 ${
+                  transition={{
+                    boxShadow: { type: 'spring', stiffness: 320, damping: 22 },
+                    scale: { type: 'spring', stiffness: 320, damping: 22 },
+                    rotate: { duration: 1.8, repeat: isOn ? Infinity : 0, ease: 'easeInOut' },
+                  }}
+                  className={`relative flex h-20 w-20 flex-col items-center justify-center overflow-hidden rounded-[22px] border-[3px] backdrop-blur-sm transition-colors duration-300 sm:h-28 sm:w-28 ${
                     isOn
                       ? 'border-[#f0a93c] bg-[#fff8e6]/95'
                       : isSeen
@@ -346,29 +381,58 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
                         : 'border-[#b9b1a4]/70 bg-[#e8e3d8]/80'
                   }`}
                 >
-                  {/* 已读取的图标持续发光：外圈柔和呼吸光 */}
+                  {/* 已读取的图标持续发光：柔和的呼吸光晕 */}
                   {isSeen && (
                     <motion.span
                       aria-hidden
-                      className="pointer-events-none absolute inset-0 rounded-2xl"
+                      className="pointer-events-none absolute inset-0 rounded-[22px]"
                       animate={{
-                        opacity: isOn ? [0.85, 1, 0.85] : [0.5, 0.8, 0.5],
+                        opacity: isOn ? [0.85, 1, 0.85] : [0.5, 0.85, 0.5],
                         boxShadow: isOn
-                          ? '0 0 30px 8px rgba(246,180,62,0.75)'
-                          : '0 0 16px 3px rgba(246,190,90,0.45)',
+                          ? '0 0 40px 12px rgba(246,180,62,0.85)'
+                          : '0 0 22px 5px rgba(246,190,90,0.55)',
                       }}
                       transition={{ duration: 2.4, repeat: Infinity, ease: 'easeInOut' }}
                     />
                   )}
-                  <span
-                    className={`text-2xl transition-all duration-300 sm:text-3xl ${
+                  {/* 高光斜扫：已读取的图标每隔几秒掠过一道光 */}
+                  {isSeen && (
+                    <motion.span
+                      aria-hidden
+                      className="pointer-events-none absolute top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-white/70 to-transparent"
+                      initial={{ left: '-40%' }}
+                      animate={{ left: ['-40%', '120%'] }}
+                      transition={{
+                        duration: 1.5,
+                        repeat: Infinity,
+                        repeatDelay: isOn ? 1.6 : 3.4,
+                        ease: 'easeInOut',
+                        delay: i * 0.5,
+                      }}
+                    />
+                  )}
+                  <motion.span
+                    className={`text-4xl transition-all duration-300 sm:text-5xl ${
                       isSeen ? '' : 'grayscale opacity-45'
-                    } ${isOn ? 'animate-pulse' : ''}`}
+                    }`}
+                    animate={
+                      isOn
+                        ? { scale: [1, 1.22, 1], rotate: [0, 8, -6, 0] }
+                        : isSeen
+                          ? { scale: [1, 1.07, 1], rotate: [0, 3, -3, 0] }
+                          : {}
+                    }
+                    transition={{
+                      duration: isOn ? 1.1 : 3.2,
+                      repeat: Infinity,
+                      ease: 'easeInOut',
+                      delay: i * 0.3,
+                    }}
                   >
                     {h.emoji}
-                  </span>
+                  </motion.span>
                   <span
-                    className={`font-cartoon-latin mt-0.5 text-[9px] font-bold tracking-[0.18em] transition-colors duration-300 sm:text-[10px] ${
+                    className={`font-cartoon-latin mt-0.5 text-[11px] font-black tracking-[0.18em] transition-colors duration-300 sm:text-[13px] ${
                       isOn
                         ? 'text-[#8a4a12]'
                         : isSeen
@@ -378,6 +442,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
                   >
                     {h.en}
                   </span>
+                </motion.div>
                 </motion.div>
                 {/* 未点亮时是暗点，点亮后浮现中文名 */}
                 <AnimatePresence>
