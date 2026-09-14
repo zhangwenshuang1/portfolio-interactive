@@ -176,10 +176,13 @@ function PuzzleFinale({
               className="flex flex-col items-center px-6 text-center"
             >
               <span className="text-5xl">🔁</span>
-              <p className="mt-4 max-w-sm text-xl font-bold leading-relaxed text-[#33302b]">
-                故事未完待续。
+              <p className="mt-4 max-w-md text-xl font-bold leading-relaxed text-[#33302b]">
+                这块拼图永远留着一角空白，
                 <br />
-                但有关于我的这一块，已经在这里了。
+                因为我的故事，还有无限可能。
+              </p>
+              <p className="mt-3 max-w-md text-sm font-medium leading-relaxed text-[#6f6355]">
+                下一块会拼在哪里，连我自己都还在期待。
               </p>
               <button
                 onClick={onReplay}
