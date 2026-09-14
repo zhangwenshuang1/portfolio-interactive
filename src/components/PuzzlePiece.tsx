@@ -151,16 +151,16 @@ export default function PuzzlePiece({
             {puzzle.tagline}
           </div>
 
-          {/* 关键词：已读后永久显示；未读时只在 hover 时浮现（中文卡通字体） */}
+          {/* 关键词：已读后永久显示；未读时只在 hover 时浮现（中文卡通字体，三列两排） */}
           <div
-            className={`mt-4 flex max-w-[300px] flex-wrap items-center justify-center gap-2 ${
+            className={`mt-4 grid w-full max-w-[300px] grid-cols-3 gap-2 ${
               isHovered || puzzle.isRead ? '' : 'hidden'
             }`}
           >
             {puzzle.keywords.map((kw) => (
               <span
                 key={kw}
-                className="font-cartoon-cn rounded-full bg-white/30 px-3 py-1 text-base font-normal text-white shadow-sm backdrop-blur-sm"
+                className="font-cartoon-cn flex items-center justify-center rounded-full bg-white/30 px-2 py-1 text-sm font-normal text-white shadow-sm backdrop-blur-sm"
               >
                 {kw}
               </span>

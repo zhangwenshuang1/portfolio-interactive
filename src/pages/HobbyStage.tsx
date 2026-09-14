@@ -273,20 +273,6 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {  const [activ
               我的兴趣地图
             </h2>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="退出兴趣地图"
-            className="font-cartoon-latin group pointer-events-auto flex items-center gap-2 rounded-full border border-[#8a6a44]/45 bg-[#fffaf0]/85 px-3.5 py-1.5 text-[11px] font-black tracking-[0.18em] text-[#7a5a2f] shadow-[0_6px_16px_-8px_rgba(90,60,25,0.65)] backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-[#c1682f] hover:bg-[#fff3dc] hover:text-[#a34f1c]"
-          >
-            <span
-              aria-hidden
-              className="grid h-4 w-4 place-items-center rounded-full bg-[#e8d3ac] text-[12px] font-black leading-none transition-colors group-hover:bg-[#f0b45a]"
-            >
-              ×
-            </span>
-            退出
-          </button>
         </div>
 
         {/* 地图主体 */}
