@@ -174,7 +174,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
         ))}
 
         {/* 标题 */}
-        <div className="relative z-10 flex items-start justify-between px-5 pt-4 sm:px-7">
+        <div className="pointer-events-none relative z-10 flex items-start justify-between px-5 pt-4 sm:px-7">
           <div>
             <p className="font-cartoon-latin text-[11px] font-bold uppercase tracking-[0.3em] text-[#8a5a2b]">
               Interest Map · MOVE
@@ -192,7 +192,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
         </div>
 
         {/* 地图主体 */}
-        <div className="relative min-h-0 flex-1">
+        <div className="absolute inset-0">
           {/* 连接线：把相邻兴趣点连成一张"地图网络"，点亮时高亮 */}
           <svg
             aria-hidden
