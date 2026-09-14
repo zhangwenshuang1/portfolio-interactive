@@ -27,6 +27,16 @@ const pct = (p: { x: number; y: number }) => ({
   y: (p.y / MAP_H) * 100,
 })
 
+/** 每张照片的原始宽高比（宽 / 高），新照片忘了登记也能用运行时实测值兜底 */
+const PHOTO_RATIO: Record<string, number> = {
+  'music-1': 0.75, 'music-2': 1.453,
+  'cook-1': 0.75, 'cook-2': 0.75,
+  'climb-1': 1.333, 'climb-2': 0.75, 'climb-3': 0.75,
+  'swim-1': 1.777,
+  'hike-1': 0.75, 'hike-2': 1.774,
+  'ball-1': 0.667, 'ball-2': 0.75, 'ball-3': 1.501,
+}
+
 // 一张兴趣地图：六个兴趣点各自落在符合语义的地标上，
 // 鼠标移上去会像灯一样亮起，旁边浮出照片。
 const HOBBIES: Hobby[] = [
@@ -86,11 +96,12 @@ const HOBBIES: Hobby[] = [
   },
 ]
 
-export default function HobbyStage({ onClose }: HobbyStageProps) {
-  const [active, setActive] = useState<string | null>(null)
+export default function HobbyStage({ onClose }: HobbyStageProps) {  const [active, setActive] = useState<string | null>(null)
   const timerRef = useRef<number | null>(null)
   const [rolled, setRolled] = useState(false)
   const [vp, setVp] = useState({ w: 1440, h: 900 })
+  // 每张照片的原始宽高比（宽 / 高），用来在不改变比例的前提下计算它能占多宽
+  const [ratios, setRatios] = useState<Record<string, number>>({})
 
   // 一打开就播放「卷轴展开」动画
   useEffect(() => {
@@ -106,16 +117,57 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
     return () => window.removeEventListener('resize', sync)
   }, [])
 
+  // 记录地图面板的实际尺寸：方框必须完全落在面板内
+  const stageRef = useRef<HTMLDivElement | null>(null)
+  const [panel, setPanel] = useState({ w: 1088, h: 753 })
+  useEffect(() => {
+    const el = stageRef.current
+    if (!el) return
+    const sync = () => {
+      const r = el.getBoundingClientRect()
+      setPanel({ w: r.width, h: r.height })
+    }
+    sync()
+    const ro = new ResizeObserver(sync)
+    ro.observe(el)
+    return () => ro.disconnect()
+  }, [])
+
   const activeHobby = useMemo(
     () => HOBBIES.find((h) => h.key === active) ?? null,
     [active],
   )
 
-  // 弹窗与照片尺寸：照片统一高度（保证不被压扁），同时保证总宽度不超出屏幕
-  const photoCount = activeHobby ? activeHobby.photos.length : 1
-  const photoH = Math.min(440, Math.round(0.42 * vp.h))
-  const maxRowW = Math.round(0.9 * vp.w) - 80
-  const popupW = Math.min(maxRowW, photoCount * Math.round(photoH * 0.85) + (photoCount - 1) * 16 + 44)
+  // 图片加载时记录它真实的原始宽高比，保证计算时的比例 100% 准确
+  const rememberRatio = (img: HTMLImageElement | null, key: string) => {
+    if (!img || !img.naturalHeight) return
+    const r = img.naturalWidth / img.naturalHeight
+    setRatios((cur) => (cur[key] === r ? cur : { ...cur, [key]: r }))
+  }
+
+  // 已知则用实测原始比例，否则回退到照片尺寸表
+  const ratioOf = (p: string) => ratios[p] ?? PHOTO_RATIO[p] ?? 1
+
+  // 照片统一高度：宽度由图片自身比例决定，所以比例永远不会被改变；
+  // 弹窗（方框）不用预估宽度，而是按内容收缩，恰好框住照片。
+  // 高度从基准值逐步降低，直到同时满足：所有照片并排一行放得下、
+  // 方框不超过面板宽度、也不超过面板高度（所以攀岩/篮球的三张竖图也永远是一行）。
+  const photoH = useMemo(() => {
+    const base = Math.min(440, Math.round(0.42 * vp.h))
+    const list = activeHobby?.photos ?? []
+    const pad = (vp.w >= 640 ? 16 : 12) * 2 + 6 // 卡片内边距 + 边框
+    const availW = Math.round(panel.w * 0.98) - pad
+    const availH = Math.round(panel.h * 0.92)
+    const gaps = Math.max(0, list.length - 1) * 16
+    const extraH = 484 - 378 // 标题 + 简介等固定内容高度
+    const fits = (h: number) => {
+      const rowW = list.reduce((a, p) => a + Math.round(ratioOf(p) * h), 0) + gaps
+      return rowW <= availW && h + extraH <= availH
+    }
+    let h = base
+    while (h > 120 && !fits(h)) h -= 8
+    return h
+  }, [vp, activeHobby, ratios, panel])
 
   // 键盘：Esc 关闭；← → 在兴趣之间切换，方便无鼠标浏览
   useEffect(() => {
@@ -150,7 +202,10 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
 
   return (
     <div className="relative min-h-0 flex flex-1 flex-col">
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border-[3px] border-[#8a6a44]/70 bg-[#e6d0a4] shadow-[0_30px_80px_-30px_rgba(60,40,20,0.8)]">
+      <div
+        ref={stageRef}
+        className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border-[3px] border-[#8a6a44]/70 bg-[#e6d0a4] shadow-[0_30px_80px_-30px_rgba(60,40,20,0.8)]"
+      >
         {/* ══ 卷轴画布：左右各有一根卷轴杆，地图像画轴一样从中间向两边展开 ══ */}
         <motion.div
           className="absolute inset-0 overflow-hidden"
@@ -313,12 +368,12 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                 className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
               >
                 <div
-                  className="pointer-events-auto max-w-full"
+                  className="pointer-events-auto block max-w-full"
                   onMouseEnter={() => enter(activeHobby.key)}
                   onMouseLeave={leave}
-                  style={{ '--popup-w': `${popupW}px`, '--photo-h': `${photoH}px` } as React.CSSProperties}
+                  style={{ '--photo-h': `${photoH}px` } as React.CSSProperties}
                 >
-                <div className="w-[var(--popup-w)] max-w-full rounded-3xl border-[3px] border-[#b08a52]/70 bg-[#fffdf6]/96 p-3 shadow-[0_24px_70px_-20px_rgba(60,40,20,0.75)] backdrop-blur sm:p-4">
+                <div className="inline-block rounded-3xl border-[3px] border-[#b08a52]/70 bg-[#fffdf6]/96 p-3 shadow-[0_24px_70px_-20px_rgba(60,40,20,0.75)] backdrop-blur sm:p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="text-xl">{activeHobby.emoji}</span>
                     <span className="font-cartoon-latin text-sm font-black tracking-[0.16em] text-[#4a3417]">
@@ -332,7 +387,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                   <p className="mb-2.5 text-[12px] font-medium leading-relaxed text-[#6f5a3c]">
                     {activeHobby.blurb}
                   </p>
-                  <div className="flex w-full items-center justify-center gap-4">
+                  <div className="flex flex-nowrap items-center justify-center gap-4 whitespace-nowrap">
                     {activeHobby.photos.map((p, i) => (
                       <motion.div
                         key={p}
@@ -342,6 +397,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                         className="shrink-0 overflow-hidden rounded-xl border border-[#d8c49a] bg-[#f4ead4]"
                       >
                         <img
+                          ref={(el) => rememberRatio(el, p)}
                           src={`/hobby/${p}.webp`}
                           alt={`${activeHobby.cn} ${i + 1}`}
                           loading="lazy"
