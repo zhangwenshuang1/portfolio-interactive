@@ -44,12 +44,11 @@ const T = {
     '现在回头看，那时的自己其实还有很多不成熟的地方，但也正是在一次次讨论、修改和临场应变里，我第一次真切地感受到：原来一个想法被实现的过程，本身就这么有趣。\n' +
     '也是从那时候开始，我越来越确定，自己想做的事情，是把脑海里的故事变成真实可见的画面。',
 
-  // 2 · 纪念馆（拆成两段，分别给第 2 / 第 3 页）
-  t2a:
+  // 2 · 侵华日军遇难同胞纪念馆 · 志愿
+  t2:
     '在纪念馆做志愿的那天，我们站在入口附近，和一位又一位前来参观的人聊起他们对这段历史的印象与想法。\n' +
     '原本以为自己是在记录别人的答案，真正开始交流之后，却发现每一个回答背后，都藏着不同的记忆与情绪。\n' +
-    '那些被反复提起的名字、年份和故事，也不再只是课本里的文字。站在这里，听见人们谈起这段历史，我才第一次如此具体地感受到，所谓「记住」，其实是一个个真实的人，在时间里留下的痕迹。',
-  t2b:
+    '那些被反复提起的名字、年份和故事，也不再只是课本里的文字。站在这里，听见人们谈起这段历史，我才第一次如此具体地感受到，所谓「记住」，其实是一个个真实的人，在时间里留下的痕迹。\n' +
     '那一天，我也重新认识了这段历史。\n' +
     '有些记忆之所以需要被留下，是因为总有人愿意认真地听见，并把它继续传下去。',
 
@@ -140,6 +139,12 @@ const T = {
     '最后，我还是会回到南京，回到学业、实习和那些需要继续面对的事情里。\n' +
     '但至少那一次，我带着孩子们给我的快乐回去了。\n' +
     '像是短暂地走远了一点，再带着一点新的力量，回到自己的生活。',
+  // 11 · 收尾：十一个页码，装下了一整个夏天
+  t11:
+    '十一段记忆，装下了一整个夏天。\n' +
+    '有些日子短得连名字都来不及记全，却在后来一次次回想时，发现它们一直都在。\n' +
+    '我本来以为自己是去给予一些什么，最后却带着更多东西离开了。\n' +
+    '这些照片，就是那段时间留在我身上的痕迹。',
 }
 
 /**
@@ -149,17 +154,17 @@ const T = {
  * `story` 决定右页写什么。两者独立编号，互不影响。
  */
 const PAGES: Page[] = [
-  { key: 'p01', photo: '01', index: '01', titleEn: 'THE FIRST FILM', placeEn: 'NANJING', placeCn: '南京', date: '', story: T.t1 },
-  { key: 'p02', photo: '10', index: '02', titleEn: 'TO REMEMBER', placeEn: 'NANJING', placeCn: '南京', date: '', story: T.t2a },
-  { key: 'p03', photo: '08', index: '03', titleEn: 'TO REMEMBER · II', placeEn: 'NANJING', placeCn: '南京', date: '', story: T.t2b },
-  { key: 'p04', photo: '02', index: '04', titleEn: '48 HOURS', placeEn: 'ON THE ROAD', placeCn: '路上', date: '', story: T.t9 },
-  { key: 'p05', photo: '04', index: '05', titleEn: 'A POEM IN SUMMER', placeEn: 'YUNNAN', placeCn: '云南', date: '', story: T.t3 },
-  { key: 'p06', photo: '05', index: '06', titleEn: 'BEYOND THE CLASSROOM', placeEn: 'YUNNAN', placeCn: '云南', date: '', story: T.t4 },
-  { key: 'p07', photo: '06', index: '07', titleEn: 'SEE THE WORLD', placeEn: 'YUNNAN', placeCn: '云南', date: '', story: T.t5 },
-  { key: 'p08', photo: '07', index: '08', titleEn: 'THE PEOPLE I MET', placeEn: 'YUNNAN', placeCn: '云南', date: '', story: T.t6 },
-  { key: 'p09', photo: '09', index: '09', titleEn: 'THE JOY OF PLAY', placeEn: 'YUNNAN', placeCn: '云南', date: '', story: T.t7 },
-  { key: 'p10', photo: '11', index: '10', titleEn: 'A LITTLE WHILE', placeEn: 'YUNNAN', placeCn: '云南', date: '', story: T.t10 },
-  { key: 'p11', photo: '03', index: '11', titleEn: 'WHAT I REMEMBER', placeEn: 'YUNNAN', placeCn: '云南', date: '', story: T.t8 },
+  { key: 'p01', photo: '01', index: '01', titleEn: 'THE FIRST FILM', placeEn: 'NANJING', placeCn: '南京', date: '2023.10', story: T.t1 },
+  { key: 'p02', photo: '04', index: '02', titleEn: 'TO REMEMBER', placeEn: 'NANJING', placeCn: '南京', date: '2023.12', story: T.t2 },
+  { key: 'p03', photo: '10', index: '03', titleEn: 'A POEM IN SUMMER', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07', story: T.t3 },
+  { key: 'p04', photo: '09', index: '04', titleEn: 'BEYOND THE CLASSROOM', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07', story: T.t4 },
+  { key: 'p05', photo: '11', index: '05', titleEn: 'SEE THE WORLD', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07', story: T.t5 },
+  { key: 'p06', photo: '05', index: '06', titleEn: 'THE PEOPLE I MET', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07', story: T.t6 },
+  { key: 'p07', photo: '06', index: '07', titleEn: 'THE JOY OF PLAY', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07', story: T.t7 },
+  { key: 'p08', photo: '08', index: '08', titleEn: 'A LITTLE WHILE', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07', story: T.t8 },
+  { key: 'p09', photo: '07', index: '09', titleEn: '48 HOURS', placeEn: 'ON THE ROAD', placeCn: '路上', date: '2024.07', story: T.t9 },
+  { key: 'p10', photo: '02', index: '10', titleEn: 'ON THE PODIUM', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07', story: T.t10 },
+  { key: 'p11', photo: '03', index: '11', titleEn: 'WHAT I REMEMBER', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07', story: T.t11 },
 ]
 
 // 确保始终有 11 页（避免调整导致页数不符）
