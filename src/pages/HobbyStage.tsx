@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import AnimeMap from '../components/AnimeMap'
+import AnimeMap, { LANDMARKS, MAP_W, MAP_H } from '../components/AnimeMap'
 
 interface HobbyStageProps {
   onClose: () => void
@@ -21,15 +21,21 @@ interface Hobby {
   blurb: string
 }
 
-// 一张兴趣地图：六个兴趣点散布其上，鼠标移上去会像灯一样亮起，旁边浮出照片。
+/** 把地图画布坐标换算成舞台百分比坐标 */
+const pct = (p: { x: number; y: number }) => ({
+  x: (p.x / MAP_W) * 100,
+  y: (p.y / MAP_H) * 100,
+})
+
+// 一张兴趣地图：六个兴趣点各自落在符合语义的地标上，
+// 鼠标移上去会像灯一样亮起，旁边浮出照片。
 const HOBBIES: Hobby[] = [
   {
     key: 'music',
     emoji: '🎸',
     en: 'MUSIC',
     cn: '音乐',
-    x: 22,
-    y: 30,
+    ...pct(LANDMARKS.bigTree),
     photos: ['music-1', 'music-2'],
     blurb: '一把吉他，几个和弦，把日子弹成歌。',
   },
@@ -38,8 +44,7 @@ const HOBBIES: Hobby[] = [
     emoji: '🍳',
     en: 'COOK',
     cn: '烹饪',
-    x: 74,
-    y: 22,
+    ...pct(LANDMARKS.camp),
     photos: ['cook-1', 'cook-2'],
     blurb: '把食材变成一顿热乎饭，是最踏实的浪漫。',
   },
@@ -48,8 +53,7 @@ const HOBBIES: Hobby[] = [
     emoji: '🧗',
     en: 'CLIMB',
     cn: '攀岩',
-    x: 30,
-    y: 66,
+    ...pct(LANDMARKS.rock),
     photos: ['climb-1', 'climb-2', 'climb-3'],
     blurb: '往上一步，世界就多开一扇窗。',
   },
@@ -58,8 +62,7 @@ const HOBBIES: Hobby[] = [
     emoji: '🏊',
     en: 'SWIM',
     cn: '游泳',
-    x: 60,
-    y: 58,
+    ...pct(LANDMARKS.lake),
     photos: ['swim-1'],
     blurb: '水里的安静，是我给大脑开的静音键。',
   },
@@ -68,8 +71,7 @@ const HOBBIES: Hobby[] = [
     emoji: '🏔',
     en: 'HIKE',
     cn: '徒步',
-    x: 84,
-    y: 60,
+    ...pct(LANDMARKS.mountainTop),
     photos: ['hike-1', 'hike-2'],
     blurb: '把烦恼留在山脚，把风景装进肺里。',
   },
@@ -78,8 +80,7 @@ const HOBBIES: Hobby[] = [
     emoji: '🏀',
     en: 'BALL',
     cn: '篮球',
-    x: 47,
-    y: 82,
+    ...pct(LANDMARKS.court),
     photos: ['ball-1', 'ball-2', 'ball-3'],
     blurb: '球场上跑起来，风就追不上我了。',
   },
@@ -88,6 +89,13 @@ const HOBBIES: Hobby[] = [
 export default function HobbyStage({ onClose }: HobbyStageProps) {
   const [active, setActive] = useState<string | null>(null)
   const timerRef = useRef<number | null>(null)
+  const [rolled, setRolled] = useState(false)
+
+  // 一打开就播放「卷轴展开」动画
+  useEffect(() => {
+    const t = window.setTimeout(() => setRolled(true), 120)
+    return () => window.clearTimeout(t)
+  }, [])
 
   const activeHobby = useMemo(
     () => HOBBIES.find((h) => h.key === active) ?? null,
@@ -127,15 +135,43 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
 
   return (
     <div className="relative min-h-0 flex flex-1 flex-col">
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border-[3px] border-[#8a6a44]/70 bg-[#f2dcb2] shadow-[0_30px_80px_-30px_rgba(60,40,20,0.8)]">
-        {/* 动漫风手绘地图（山、海、树、动物） */}
-        <AnimeMap className="pointer-events-none absolute inset-0 h-full w-full" />
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border-[3px] border-[#8a6a44]/70 bg-[#e6d0a4] shadow-[0_30px_80px_-30px_rgba(60,40,20,0.8)]">
+        {/* ══ 卷轴画布：左右各有一根卷轴杆，地图像画轴一样从中间向两边展开 ══ */}
+        <motion.div
+          className="absolute inset-0 overflow-hidden"
+          initial={{ clipPath: 'inset(0% 50% 0% 50%)' }}
+          animate={{ clipPath: rolled ? 'inset(0% 0% 0% 0%)' : 'inset(0% 50% 0% 50%)' }}
+          transition={{ duration: 1.05, ease: [0.22, 0.8, 0.25, 1] }}
+        >
+          {/* 动漫风手绘地图（山 / 海 / 湖 / 梯田 / 地标） */}
+          <AnimeMap className="pointer-events-none absolute inset-0 h-full w-full" />
 
-        {/* 地图纸的柔和暗角，让图标更突出 */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_rgba(120,80,40,0.22)]"
-        />
+          {/* 地图纸的柔和暗角，让图标更突出 */}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_rgba(120,80,40,0.22)]"
+          />
+        </motion.div>
+
+        {/* 展开中的两圈卷轴纸卷 */}
+        {[0, 1].map((side) => (
+          <motion.div
+            key={side}
+            aria-hidden
+            className="pointer-events-none absolute top-0 z-20 h-full w-4 rounded-full"
+            style={{
+              background:
+                'linear-gradient(90deg, #b98c50 0%, #f0dcb2 35%, #fffaf0 50%, #f0dcb2 65%, #b98c50 100%)',
+              boxShadow: '0 0 20px rgba(80,50,20,0.4)',
+            }}
+            initial={{ left: '50%', opacity: 1 }}
+            animate={{
+              left: rolled ? (side === 0 ? '-1%' : '97%') : '50%',
+              opacity: rolled ? 0 : 1,
+            }}
+            transition={{ duration: 1.05, ease: [0.22, 0.8, 0.25, 1] }}
+          />
+        ))}
 
         {/* 标题 */}
         <div className="relative z-10 flex items-start justify-between px-5 pt-4 sm:px-7">
@@ -185,12 +221,18 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
           </svg>
 
           {/* 兴趣节点 */}
-          {HOBBIES.map((h) => {
+          {HOBBIES.map((h, i) => {
             const isOn = active === h.key
             return (
-              <button
+              <motion.button
                 key={h.key}
                 type="button"
+                initial={{ opacity: 0, scale: 0.4 }}
+                animate={{
+                  opacity: rolled ? 1 : 0,
+                  scale: rolled ? 1 : 0.4,
+                }}
+                transition={{ delay: rolled ? 0.85 + i * 0.09 : 0, duration: 0.4, ease: 'backOut' }}
                 onMouseEnter={() => enter(h.key)}
                 onMouseLeave={leave}
                 onFocus={() => enter(h.key)}
@@ -238,7 +280,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                     </motion.span>
                   )}
                 </AnimatePresence>
-              </button>
+              </motion.button>
             )
           })}
 
