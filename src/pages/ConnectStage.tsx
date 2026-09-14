@@ -56,6 +56,7 @@ const T = {
 
   // 4 · 第一次站上讲台，读现代诗
   t5:
+    '参加了南悦乡村支教团，在火车上开启我们的二十天的旅程。\n' +
     '第一次站上讲台，面对的是一群比我想象中更有想象力的孩子。那天，我们一起读现代诗，没有标准答案，也没有规定要写成什么样。\n' +
     '最后让我惊喜的，是他们写出来的诗——有些句子很稚拙，却有一种成年人很难再拥有的真诚。\n' +
     '我原以为那天是我在教他们一些东西，后来才发现，连接并不是单向的。我们把一点知识递给彼此，也在彼此身上发现新的东西。',
@@ -80,7 +81,7 @@ const T = {
 
   // 8 · 操场踢足球
   t9:
-    '支教的时候，我也会和孩子们一起跑到操场上踢足球。没有规则，也没有人在意谁踢得好不好。一个球，一片操场，追着跑、摔倒了再爬起来，进了球就开心地欢呼。\n' +
+    '课间几分钟我也会和孩子们一起跑到操场上踢足球。没有规则，也没有人在意谁踢得好不好。一个球，一片操场，追着跑、摔倒了再爬起来，进了球就开心地欢呼。\n' +
     '那一刻我忽然觉得，他们的快乐真的很简单。其实我也没有比他们大多少，却有一点羡慕。\n' +
     '我也希望自己能一直保留一点这样的能力，认真地喜欢一件小事，也认真地享受当下的快乐。',
 
@@ -203,15 +204,19 @@ export default function ConnectStage({ onClose }: StageProps) {
 
   return (
     <div className="relative flex min-h-0 flex-1 flex-col">
-      {/* —— 右上角退出按钮 —— */}
+      {/* —— 右上角退出按钮：圆形小图标，悬停时向右展开文字，不遮挡书页 —— */}
       <button
         onClick={onClose}
         aria-label="退出"
         title="退出（Esc）"
-        className="absolute right-1 top-1 z-30 flex h-9 items-center gap-2 rounded-full border border-[#b4925a]/40 bg-white/70 px-4 text-[12px] font-bold uppercase tracking-[0.2em] text-[#6b5636] shadow-[0_4px_14px_rgba(80,60,30,0.18)] backdrop-blur transition hover:scale-[1.04] hover:bg-white"
+        className="group absolute -right-2 -top-2 z-30 flex h-11 w-11 items-center justify-center rounded-full border border-[#c9a86a]/50 bg-[#fbf4e6]/90 text-[#8a6a44] shadow-[0_6px_18px_rgba(80,60,30,0.22)] backdrop-blur transition-all duration-300 ease-out hover:w-[112px] hover:border-[#b4925a]/70 hover:bg-white hover:text-[#6b5636] hover:shadow-[0_8px_22px_rgba(80,60,30,0.3)]"
       >
-        <span className="text-base leading-none">✕</span>
-        退出
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 text-[17px] leading-none transition-all duration-300 group-hover:left-4 group-hover:-translate-x-0">
+          ✕
+        </span>
+        <span className="font-cartoon-latin absolute right-4 whitespace-nowrap text-[11px] font-black uppercase tracking-[0.18em] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+          退出
+        </span>
       </button>
 
       {/* —— 书页主体 —— */}
