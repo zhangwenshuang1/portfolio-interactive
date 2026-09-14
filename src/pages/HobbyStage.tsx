@@ -90,6 +90,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
   const [active, setActive] = useState<string | null>(null)
   const timerRef = useRef<number | null>(null)
   const [rolled, setRolled] = useState(false)
+  const [vp, setVp] = useState({ w: 1440, h: 900 })
 
   // 一打开就播放「卷轴展开」动画
   useEffect(() => {
@@ -97,14 +98,24 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
     return () => window.clearTimeout(t)
   }, [])
 
+  // 记录视口尺寸，用于计算照片高度（保证照片不变形且不超出屏幕）
+  useEffect(() => {
+    const sync = () => setVp({ w: window.innerWidth, h: window.innerHeight })
+    sync()
+    window.addEventListener('resize', sync)
+    return () => window.removeEventListener('resize', sync)
+  }, [])
+
   const activeHobby = useMemo(
     () => HOBBIES.find((h) => h.key === active) ?? null,
     [active],
   )
 
-  // 最多展示的照片张数 → 弹窗宽度（大屏尽量一次摆开所有照片）
-  const photoCols = activeHobby ? activeHobby.photos.length : 1
-  const popupW = `min(94vw, ${photoCols * 380 + 60}px)`
+  // 弹窗与照片尺寸：照片统一高度（保证不被压扁），同时保证总宽度不超出屏幕
+  const photoCount = activeHobby ? activeHobby.photos.length : 1
+  const photoH = Math.min(440, Math.round(0.42 * vp.h))
+  const maxRowW = Math.round(0.9 * vp.w) - 80
+  const popupW = Math.min(maxRowW, photoCount * Math.round(photoH * 0.85) + (photoCount - 1) * 16 + 44)
 
   // 键盘：Esc 关闭；← → 在兴趣之间切换，方便无鼠标浏览
   useEffect(() => {
@@ -302,12 +313,12 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                 className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
               >
                 <div
-                  className="pointer-events-auto w-[var(--popup-w)] max-w-full"
+                  className="pointer-events-auto max-w-full"
                   onMouseEnter={() => enter(activeHobby.key)}
                   onMouseLeave={leave}
-                  style={{ '--popup-w': popupW } as React.CSSProperties}
+                  style={{ '--popup-w': `${popupW}px`, '--photo-h': `${photoH}px` } as React.CSSProperties}
                 >
-                <div className="rounded-3xl border-[3px] border-[#b08a52]/70 bg-[#fffdf6]/96 p-3 shadow-[0_24px_70px_-20px_rgba(60,40,20,0.75)] backdrop-blur sm:p-4">
+                <div className="w-[var(--popup-w)] max-w-full rounded-3xl border-[3px] border-[#b08a52]/70 bg-[#fffdf6]/96 p-3 shadow-[0_24px_70px_-20px_rgba(60,40,20,0.75)] backdrop-blur sm:p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="text-xl">{activeHobby.emoji}</span>
                     <span className="font-cartoon-latin text-sm font-black tracking-[0.16em] text-[#4a3417]">
@@ -321,20 +332,21 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                   <p className="mb-2.5 text-[12px] font-medium leading-relaxed text-[#6f5a3c]">
                     {activeHobby.blurb}
                   </p>
-                  <div className="flex w-full items-end justify-center gap-3">
+                  <div className="flex w-full items-center justify-center gap-4">
                     {activeHobby.photos.map((p, i) => (
                       <motion.div
                         key={p}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.05 + i * 0.06 }}
-                        className="min-w-0 overflow-hidden rounded-xl border border-[#d8c49a] bg-[#f4ead4]"
+                        className="shrink-0 overflow-hidden rounded-xl border border-[#d8c49a] bg-[#f4ead4]"
                       >
                         <img
                           src={`/hobby/${p}.webp`}
                           alt={`${activeHobby.cn} ${i + 1}`}
                           loading="lazy"
-                          className="block max-h-[52vh] w-full object-contain"
+                          className="block w-auto max-w-none object-contain"
+                          style={{ height: 'var(--photo-h)' }}
                         />
                       </motion.div>
                     ))}
