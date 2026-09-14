@@ -68,8 +68,8 @@ const PHYSICAL: Array<[number, number]> = [
 ]
 
 const MODES: Record<WorkMode, { label: string; en: string; accent: string; hint: string }> = {
-  ai: { label: 'AI 模式', en: 'AI MODE', accent: '#a78bfa', hint: '数字生成 · 流动 · 实验' },
-  live: { label: '实拍模式', en: 'LIVE MODE', accent: '#7dd3fc', hint: '真实影像 · 现场 · 记录' },
+  ai: { label: 'AIGC创作', en: 'AIGC MODE', accent: '#a78bfa', hint: '数字生成 · 流动 · 实验' },
+  live: { label: '现场实拍', en: 'LIVE MODE', accent: '#7dd3fc', hint: '真实影像 · 现场 · 记录' },
 }
 
 interface StageProps {
@@ -202,6 +202,112 @@ export default function CreateStage({ onClose }: StageProps) {
     </div>
   )
 
+  // ── 幕后胶片带（BTS）：竖屏放右侧竖排，横屏挪到最下方横排 ──
+  const btsHeader = (
+    <div className="mb-2 flex items-center gap-2">
+      <span className="text-[11px]">🎞️</span>
+      <span className="font-cartoon-latin text-[10.5px] font-bold uppercase tracking-[0.24em] text-[#9fe0b0]/85">
+        BTS Strip
+      </span>
+      <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
+    </div>
+  )
+
+  // 胶片齿孔装饰
+  const btsPerfVertical = (
+    <span aria-hidden className="pointer-events-none absolute inset-y-1 left-0.5 w-1.5 opacity-40">
+      {Array.from({ length: 18 }).map((_, i) => (
+        <i key={i} className="mb-1.5 block h-2 w-1.5 rounded-[1px] bg-white/40" />
+      ))}
+    </span>
+  )
+  const btsPerfHorizontal = (
+    <span aria-hidden className="pointer-events-none absolute inset-x-1 top-0.5 h-1.5 opacity-40">
+      {Array.from({ length: 40 }).map((_, i) => (
+        <i key={i} className="mr-1.5 inline-block h-1.5 w-2 rounded-[1px] bg-white/40" />
+      ))}
+    </span>
+  )
+
+  // 单张幕后工作照
+  const btsFigure = (b: Bts, i: number, dir: 'vertical' | 'horizontal') => {
+    const d = PHYSICAL[i]
+    return (
+      <motion.figure
+        key={b.src}
+        className={
+          'group relative cursor-zoom-in overflow-hidden rounded-[8px] border border-white/12 ' +
+          (dir === 'vertical' ? 'min-h-0 flex-1' : 'min-w-0 flex-1')
+        }
+        initial={dir === 'vertical' ? { opacity: 0, x: 16 } : { opacity: 0, y: 16 }}
+        animate={dir === 'vertical' ? { opacity: 1, x: 0 } : { opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 + i * 0.07, duration: 0.4 }}
+        whileHover={{ scale: 1.03 }}
+      >
+        <img
+          src={b.src}
+          alt={b.cn}
+          width={d[0]}
+          height={d[1]}
+          loading="lazy"
+          decoding="async"
+          draggable={false}
+          className="h-full w-full object-cover transition-[filter,transform] duration-400 ease-out group-hover:brightness-110"
+        />
+        <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-90" />
+        <span className="font-cartoon-latin pointer-events-none absolute left-1.5 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded bg-black/50 px-1 text-[9px] font-bold text-white ring-1 ring-white/25">
+          {String(i + 1).padStart(2, '0')}
+        </span>
+        <span
+          className={
+            'pointer-events-none absolute inset-x-0 bottom-0 px-1.5 pb-1 transition-all duration-300 ' +
+            (dir === 'vertical'
+              ? 'translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100'
+              : 'opacity-0 group-hover:opacity-100')
+          }
+        >
+          <span className="font-cartoon-latin block truncate text-[9px] font-black uppercase tracking-[0.14em] text-[#9fe0b0]">
+            {b.en}
+          </span>
+          <span
+            className={
+              'block text-white/90 ' +
+              (dir === 'vertical' ? 'truncate text-[10px] font-bold' : 'truncate text-[9.5px] font-semibold')
+            }
+          >
+            {b.cn}
+          </span>
+        </span>
+      </motion.figure>
+    )
+  }
+
+  // 幕后胶片带：竖屏时在右侧竖向排列
+  const btsPanelVertical = (
+    <div className="flex min-h-0 flex-col">
+      {btsHeader}
+      <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-[14px] border border-white/10 bg-black/30 p-1.5">
+        {btsPerfVertical}
+        <div className="flex min-h-0 flex-1 flex-col gap-1.5 pl-2.5">
+          {BTS.map((b, i) => btsFigure(b, i, 'vertical'))}
+        </div>
+      </div>
+    </div>
+  )
+
+  // 幕后胶片带：横屏时挪到最下方，横向一长条
+  const btsPanelHorizontal = (
+    <div className="flex flex-col">
+      {btsHeader}
+      <div className="relative flex flex-col overflow-hidden rounded-[14px] border border-white/10 bg-black/30 px-1.5 py-2">
+        {btsPerfHorizontal}
+        <div className="flex h-[104px] items-stretch gap-2 px-0.5 pt-2">
+          {BTS.map((b, i) => btsFigure(b, i, 'horizontal'))}
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div
       className="relative my-auto flex w-full select-none flex-col overflow-hidden rounded-[26px] border border-white/10 shadow-[inset_0_1px_0_rgba(255,255,255,0.06),0_30px_80px_rgba(4,8,14,0.55)]"
@@ -231,8 +337,17 @@ export default function CreateStage({ onClose }: StageProps) {
         </span>
       </div>
 
-      {/* —— 主体：横屏/竖屏统一为「主窗口 | 作品索引（右） | 幕后胶片带」 —— */}
-      <div className="grid min-h-0 gap-4 px-4 pb-3.5 pt-3.5 sm:px-5 lg:grid-cols-[minmax(0,1.75fr)_minmax(0,0.9fr)_minmax(0,0.6fr)]">
+      {/* —— 主体 ——
+          竖屏：「主窗口 | 作品索引（右） | 幕后胶片带（最右）」
+          横屏：「主窗口 | 作品索引（右）」，幕后胶片带挪到最下方 —— */}
+      <div
+        className={
+          'grid min-h-0 gap-4 px-4 pt-3.5 sm:px-5 ' +
+          (isLandscape
+            ? 'pb-2.5 lg:grid-cols-[minmax(0,2.4fr)_minmax(0,1fr)]'
+            : 'pb-3.5 lg:grid-cols-[minmax(0,1.75fr)_minmax(0,0.9fr)_minmax(0,0.6fr)]')
+        }
+      >
         {/* 中央：主作品展示窗口 */}
         <div className="flex min-h-0 flex-col">
           <div className="mb-2 flex items-center gap-2">
@@ -272,7 +387,6 @@ export default function CreateStage({ onClose }: StageProps) {
               playsInline
               preload="metadata"
             />
-            <span aria-hidden className="pointer-events-none absolute inset-[6%] rounded-[10px] border border-white/12" />
             {muted && (
               <button
                 type="button"
@@ -294,7 +408,7 @@ export default function CreateStage({ onClose }: StageProps) {
           {/* 可拖动的播放进度条 */}
           <div className="mt-2 flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5">
             <span className="font-cartoon-latin text-[10.5px] font-bold tracking-[0.18em]" style={{ color: accent }}>
-              {active.tag === 'AI' ? 'AI · GENERATED' : 'LIVE · CAPTURED'}
+              {active.tag === 'AI' ? 'AIGC · GENERATED' : 'LIVE · CAPTURED'}
             </span>
             <ProgressScrubber videoRef={videoRef} accent={accent} />
             <span className="font-cartoon-latin text-[10.5px] font-bold tracking-[0.18em] text-white/40">
@@ -306,67 +420,12 @@ export default function CreateStage({ onClose }: StageProps) {
         {/* 作品索引（含模式切换）：始终在播放器右侧 */}
         {indexAsidePanel}
 
-        {/* 最右：幕后胶片带 BTS FILM STRIP */}
-        <div className="flex min-h-0 flex-col">
-          <div className="mb-2 flex items-center gap-2">
-            <span className="text-[11px]">🎞️</span>
-            <span className="font-cartoon-latin text-[10.5px] font-bold uppercase tracking-[0.24em] text-[#9fe0b0]/85">
-              BTS Strip
-            </span>
-            <span className="h-px flex-1 bg-gradient-to-r from-white/20 to-transparent" />
-          </div>
-
-          <div
-            className={
-              'relative flex min-h-0 flex-col overflow-hidden rounded-[14px] border border-white/10 bg-black/30 p-1.5 ' +
-              (isLandscape ? 'h-[min(52vh,440px)]' : 'flex-1')
-            }
-          >
-            {/* 上下齿孔装饰 */}
-            <span aria-hidden className="pointer-events-none absolute inset-y-1 left-0.5 w-1.5 opacity-40">
-              {Array.from({ length: 18 }).map((_, i) => (
-                <i key={i} className="mb-1.5 block h-2 w-1.5 rounded-[1px] bg-white/40" />
-              ))}
-            </span>
-            <div className="flex min-h-0 flex-1 flex-col gap-1.5 pl-2.5">
-              {BTS.map((b, i) => {
-                const d = PHYSICAL[i]
-                return (
-                  <motion.figure
-                    key={b.src}
-                    className="group relative min-h-0 flex-1 cursor-zoom-in overflow-hidden rounded-[8px] border border-white/12"
-                    initial={{ opacity: 0, x: 16 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: 0.4 + i * 0.07, duration: 0.4 }}
-                    whileHover={{ scale: 1.03 }}
-                  >
-                    <img
-                      src={b.src}
-                      alt={b.cn}
-                      width={d[0]}
-                      height={d[1]}
-                      loading="lazy"
-                      decoding="async"
-                      draggable={false}
-                      className="h-full w-full object-cover transition-[filter,transform] duration-400 ease-out group-hover:brightness-110"
-                    />
-                    <span className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent opacity-90" />
-                    <span className="font-cartoon-latin pointer-events-none absolute left-1.5 top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded bg-black/50 px-1 text-[9px] font-bold text-white ring-1 ring-white/25">
-                      {String(i + 1).padStart(2, '0')}
-                    </span>
-                    <span className="pointer-events-none absolute inset-x-0 bottom-0 translate-y-1 px-1.5 pb-1 opacity-0 transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                      <span className="font-cartoon-latin block truncate text-[9px] font-black uppercase tracking-[0.14em] text-[#9fe0b0]">
-                        {b.en}
-                      </span>
-                      <span className="block truncate text-[10px] font-bold text-white/90">{b.cn}</span>
-                    </span>
-                  </motion.figure>
-                )
-              })}
-            </div>
-          </div>
-        </div>
+        {/* 幕后胶片带：竖屏时在最右 */}
+        {!isLandscape && btsPanelVertical}
       </div>
+
+      {/* 幕后胶片带：横屏时挪到最下方 */}
+      {isLandscape && <div className="px-4 pb-3.5 sm:px-5">{btsPanelHorizontal}</div>}
 
       {/* 关闭 */}
       <button

@@ -52,7 +52,7 @@ export default function CreateCarouselPanel({ puzzle, onClose }: PanelProps) {
               品牌部实习 · 让想法被看见
             </h1>
             <p className="mt-1 max-w-[600px] text-[12px] font-medium text-[#c3c1dd]/70 sm:text-[12.5px]">
-              实拍与 AI 两条路径并行 —— 从脚本到成片，把品牌的想法变成能被看见的画面。
+              现场实拍与 AIGC 创作两条路径并行 —— 从脚本到成片，把品牌的想法变成能被看见的画面。
             </p>
           </div>
           <span className="font-cartoon-latin hidden rounded-full border border-white/15 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#ffd166] sm:inline-block">
