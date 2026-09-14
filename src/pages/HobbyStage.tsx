@@ -102,6 +102,10 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
     [active],
   )
 
+  // 最多展示的照片张数 → 弹窗宽度（大屏尽量一次摆开所有照片）
+  const photoCols = activeHobby ? activeHobby.photos.length : 1
+  const popupW = `min(94vw, ${photoCols * 380 + 60}px)`
+
   // 键盘：Esc 关闭；← → 在兴趣之间切换，方便无鼠标浏览
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -295,8 +299,14 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                 transition={{ duration: 0.28 }}
                 onMouseEnter={() => enter(activeHobby.key)}
                 onMouseLeave={leave}
-                className="absolute left-1/2 top-1/2 z-30 w-[min(88vw,560px)] -translate-x-1/2 -translate-y-1/2"
+                className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center"
               >
+                <div
+                  className="pointer-events-auto w-[var(--popup-w)] max-w-full"
+                  onMouseEnter={() => enter(activeHobby.key)}
+                  onMouseLeave={leave}
+                  style={{ '--popup-w': popupW } as React.CSSProperties}
+                >
                 <div className="rounded-3xl border-[3px] border-[#b08a52]/70 bg-[#fffdf6]/96 p-3 shadow-[0_24px_70px_-20px_rgba(60,40,20,0.75)] backdrop-blur sm:p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="text-xl">{activeHobby.emoji}</span>
@@ -311,32 +321,25 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                   <p className="mb-2.5 text-[12px] font-medium leading-relaxed text-[#6f5a3c]">
                     {activeHobby.blurb}
                   </p>
-                  <div
-                    className={
-                      activeHobby.photos.length === 1
-                        ? 'grid grid-cols-1'
-                        : activeHobby.photos.length === 2
-                          ? 'grid grid-cols-2 gap-2'
-                          : 'grid grid-cols-3 gap-2'
-                    }
-                  >
+                  <div className="flex w-full items-end justify-center gap-3">
                     {activeHobby.photos.map((p, i) => (
                       <motion.div
                         key={p}
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.05 + i * 0.06 }}
-                        className="overflow-hidden rounded-xl border border-[#d8c49a] bg-[#f4ead4]"
+                        className="min-w-0 overflow-hidden rounded-xl border border-[#d8c49a] bg-[#f4ead4]"
                       >
                         <img
                           src={`/hobby/${p}.webp`}
                           alt={`${activeHobby.cn} ${i + 1}`}
                           loading="lazy"
-                          className="block aspect-[4/3] w-full object-cover"
+                          className="block max-h-[52vh] w-full object-contain"
                         />
                       </motion.div>
                     ))}
                   </div>
+                </div>
                 </div>
               </motion.div>
             )}
