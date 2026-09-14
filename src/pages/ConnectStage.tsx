@@ -112,10 +112,10 @@ const T = {
  * `story` 决定右页写什么。两者独立编号，互不影响。
  */
 const PAGES: Page[] = [
-  { key: 'p01', photo: '01', index: '01', titleEn: 'THE FIRST FILM', placeEn: 'NANJING', placeCn: '南京', date: '2023.10.15', story: T.t1 },
-  { key: 'p02', photo: '02', index: '02', titleEn: 'TO REMEMBER', placeEn: 'NANJING', placeCn: '南京', date: '2023.12.13', story: T.t2 },
-  { key: 'p03', photo: '03', index: '03', titleEn: 'TO REMEMBER · II', placeEn: 'NANJING', placeCn: '南京', date: '2023.12.13', story: T.t3 },
-  { key: 'p04', photo: '04', index: '04', titleEn: '48 HOURS', placeEn: 'ON THE ROAD', placeCn: '路上', date: '2024.07.08', story: T.t11 },
+  { key: 'p01', photo: '01', index: '01', titleEn: 'THE FIRST FILM', placeEn: 'NANJING UNIVERSITY · GULOU', placeCn: '南京大学鼓楼校区', date: '2023.10.15', story: T.t1 },
+  { key: 'p02', photo: '02', index: '02', titleEn: 'TO REMEMBER', placeEn: 'MEMORIAL HALL', placeCn: '侵华日军南京大屠杀遇难同胞纪念馆', date: '2023.12.13', story: T.t2 },
+  { key: 'p03', photo: '03', index: '03', titleEn: 'TO REMEMBER · II', placeEn: 'MEMORIAL HALL', placeCn: '侵华日军南京大屠杀遇难同胞纪念馆', date: '2023.12.13', story: T.t3 },
+  { key: 'p04', photo: '04', index: '04', titleEn: '48 HOURS', placeEn: 'NANJING RAILWAY STATION', placeCn: '南京站', date: '2024.07.08', story: T.t11 },
   { key: 'p05', photo: '05', index: '05', titleEn: 'A POEM IN SUMMER', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07.12', story: T.t5 },
   { key: 'p06', photo: '06', index: '06', titleEn: 'BEYOND THE CLASSROOM', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07.14', story: T.t6 },
   { key: 'p07', photo: '07', index: '07', titleEn: 'SEE THE WORLD', placeEn: 'YUNNAN', placeCn: '云南 · 妥甸中学', date: '2024.07.16', story: T.t7 },
@@ -357,7 +357,7 @@ export default function ConnectStage({ onClose }: StageProps) {
               <div ref={storyBoxRef} className="relative mt-3 min-h-0 flex-1 overflow-hidden pr-1">
                 <p
                   ref={storyTextRef}
-                  className="whitespace-pre-line leading-[1.95] text-[#4a3a28]"
+                  className="whitespace-pre-line leading-[2.3] text-[#4a3a28]"
                   style={{
                     fontFamily: "'Ma Shan Zheng','Kaiti SC',KaiTi,serif",
                     fontSize: `${16 * storyScale}px`,
