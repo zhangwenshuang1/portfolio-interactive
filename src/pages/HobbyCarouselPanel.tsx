@@ -64,13 +64,21 @@ export default function HobbyCarouselPanel({ puzzle, onClose }: PanelProps) {
             >
               兴趣爱好 · 生活不只有一条赛道
             </h1>
-            <p className="mt-1 max-w-[620px] text-[12px] font-medium text-[#6f5a3c]/85 sm:text-[12.5px]">
-              这不是一张普通的地图 —— 每个坐标都是一个让我着迷的兴趣，把鼠标移上去，它就亮起来。
-            </p>
           </div>
-          <span className="font-cartoon-latin hidden rounded-full border border-[#a8763a]/35 bg-white/50 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#8a6a44] sm:inline-block">
-            Move · Map
-          </span>
+          <button
+            type="button"
+            onClick={handleClose}
+            aria-label="退出"
+            className="font-cartoon-latin group flex items-center gap-2 rounded-full border border-[#a8763a]/45 bg-white/60 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#7a5528] shadow-[0_6px_18px_-8px_rgba(90,60,25,0.6)] backdrop-blur transition-all duration-200 hover:-translate-y-0.5 hover:border-[#c1682f] hover:bg-[#fff3dc] hover:text-[#a34f1c] hover:shadow-[0_10px_24px_-8px_rgba(150,90,35,0.7)]"
+          >
+            <span
+              aria-hidden
+              className="grid h-5 w-5 place-items-center rounded-full bg-[#e8d3ac] text-[13px] font-black leading-none text-[#7a5528] transition-colors group-hover:bg-[#f0b45a] group-hover:text-[#5a3a12]"
+            >
+              ×
+            </span>
+            退出
+          </button>
         </div>
       </motion.div>
 
