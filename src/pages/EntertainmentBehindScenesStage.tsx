@@ -376,12 +376,7 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
               from="rise"
               glow="neon"
               imgClassName="rounded-xl border border-white/20 drop-shadow-[0_10px_18px_rgba(0,0,0,0.5)] group-hover:scale-[1.03] group-hover:drop-shadow-[0_0_18px_rgba(255,120,160,0.5)]"
-            >
-              {/* 常显编号（左上角浅底数字）：方便你按编号告知我每张背后的故事 */}
-              <span className="font-cartoon-latin pointer-events-none absolute left-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-md bg-black/45 px-1 text-[10.5px] font-bold text-white ring-1 ring-white/25 backdrop-blur-sm">
-                {String(num).padStart(2, '0')}
-              </span>
-            </DraggablePhoto>
+            />
           )
         })}
       </div>
