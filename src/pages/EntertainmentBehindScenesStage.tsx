@@ -149,20 +149,24 @@ function layoutWall(
   colW = Math.round(colW)
   colH = Math.round(colW / colArMin)
 
+  // 横排内部用更大的间隙：中央视频上下留白充足，两张横图可以排得更宽松。
+  //   先按竖列的 G 定横图大小，再把内框剩余宽度均分成 3 段作为横排间隙（两端各留半段）。
+  const GROW = Math.max(G, Math.round((innerW - 2 * rowW) / 3))
+
   const solvedRow = { w: rowW, h: rowH }
   const solvedCol = { w: colW, h: colH }
 
-  // ── 1) 上下两条横带：各 2 张横图，水平间隙 G，整排在内框宽度内居中 ──
+  // ── 1) 上下两条横带：各 2 张横图，水平间隙 GROW，整排在内框宽度内居中 ──
   const placeRow = (idxs: number[], bandTop: number, bandBottom: number) => {
     if (!idxs.length) return
     const bh = Math.max(0, bandBottom - bandTop)
     const w = solvedRow.w
     const h = solvedRow.h
-    const contentW = w * idxs.length + G * (idxs.length - 1)
+    const contentW = w * idxs.length + GROW * (idxs.length - 1)
     const startX = Math.round(edgeMinX + (BW - 2 * edgeMinX - contentW) / 2)
     const y = Math.round(bandTop + (bh - h) / 2)
     idxs.forEach((idx, n) => {
-      const x = Math.round(startX + n * (w + G))
+      const x = Math.round(startX + n * (w + GROW))
       out[idx] = { x, y, w, h }
     })
   }
