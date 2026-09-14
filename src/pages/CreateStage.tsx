@@ -410,7 +410,7 @@ export default function CreateStage({ onClose }: StageProps) {
             <span className="font-cartoon-latin text-[10.5px] font-bold tracking-[0.18em]" style={{ color: accent }}>
               {active.tag === 'AI' ? 'AIGC · GENERATED' : 'LIVE · CAPTURED'}
             </span>
-            <ProgressScrubber videoRef={videoRef} accent={accent} />
+            <ProgressScrubber videoRef={videoRef} accent={accent} videoKey={activeKey} />
             <span className="font-cartoon-latin text-[10.5px] font-bold tracking-[0.18em] text-white/40">
               {active.cn}
             </span>

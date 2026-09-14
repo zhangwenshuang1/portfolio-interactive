@@ -5,13 +5,18 @@ interface ProgressScrubberProps {
   videoRef: React.RefObject<HTMLVideoElement | null>
   /** 高亮色（已播放部分） */
   accent: string
+  /**
+   * 视频元素的“身份”标识。当同一位置换了另一支视频（<video key> 变化）时传入新值，
+   * 组件会重新绑定事件监听——否则会一直监听已被替换掉的旧元素，进度条就不再走动。
+   */
+  videoKey?: string
 }
 
 /**
  * 一条**可直接拖动**的播放进度条。
  * 不依赖 video 的原生控件：鼠标按下即跳转，拖动实时跟随，松手停在目标处。
  */
-export default function ProgressScrubber({ videoRef, accent }: ProgressScrubberProps) {
+export default function ProgressScrubber({ videoRef, accent, videoKey }: ProgressScrubberProps) {
   const barRef = useRef<HTMLSpanElement>(null)
   const [time, setTime] = useState(0)
   const [duration, setDuration] = useState(0)
@@ -25,13 +30,30 @@ export default function ProgressScrubber({ videoRef, accent }: ProgressScrubberP
     v.addEventListener('loadedmetadata', onMeta)
     v.addEventListener('durationchange', onMeta)
     v.addEventListener('timeupdate', onTime)
+    // 兜底：若组件挂载时元数据已就绪，或视频已在播放，立即同步一次状态
     if (v.readyState >= 1) setDuration(v.duration || 0)
+    setTime(v.currentTime)
     return () => {
       v.removeEventListener('loadedmetadata', onMeta)
       v.removeEventListener('durationchange', onMeta)
       v.removeEventListener('timeupdate', onTime)
     }
-  }, [videoRef])
+  }, [videoRef, videoKey])
+
+  // 播放中用 rAF 兜底刷新，避免某些浏览器 timeupdate 频率过低（约 4 次/秒）导致视觉卡顿
+  useEffect(() => {
+    let raf = 0
+    const tick = () => {
+      const v = videoRef.current
+      if (v && !v.paused) {
+        setTime(v.currentTime)
+        if (v.duration && !Number.isNaN(v.duration)) setDuration(v.duration)
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [videoRef, videoKey])
 
   const seekTo = useCallback(
     (clientX: number) => {

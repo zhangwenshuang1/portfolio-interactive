@@ -94,7 +94,11 @@ export default function SeekBarVideo({
     v.addEventListener('progress', onProgress)
     v.addEventListener('play', onPlay)
     v.addEventListener('pause', onPause)
+    // 兜底：挂载时元数据可能已就绪 / 已在播放，立即同步一次
     if (v.readyState >= 1) setDuration(v.duration || 0)
+    setTime(v.currentTime)
+    setPlaying(!v.paused)
+    onProgress()
     return () => {
       v.removeEventListener('loadedmetadata', onMeta)
       v.removeEventListener('durationchange', onMeta)
@@ -104,6 +108,26 @@ export default function SeekBarVideo({
       v.removeEventListener('pause', onPause)
     }
   }, [])
+
+  // 播放中用 rAF 兜底刷新，让进度条走得连续顺滑（timeupdate 只有约 4 次/秒）
+  useEffect(() => {
+    let raf = 0
+    const tick = () => {
+      const v = videoRef.current
+      if (v && !v.paused && !dragging) {
+        setTime(v.currentTime)
+        if (v.duration && !Number.isNaN(v.duration)) setDuration(v.duration)
+        try {
+          if (v.buffered.length) setBuffered(v.buffered.end(v.buffered.length - 1))
+        } catch {
+          /* 忽略 */
+        }
+      }
+      raf = requestAnimationFrame(tick)
+    }
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [dragging])
 
   /** 根据指针位置算出目标时间 */
   const timeFromEvent = useCallback((clientX: number) => {
