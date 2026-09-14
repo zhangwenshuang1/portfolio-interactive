@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion'
 import { useRef, useState, useLayoutEffect, useCallback } from 'react'
 import DraggablePhoto from '../components/DraggablePhoto'
+import SeekBarVideo from '../components/SeekBarVideo'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 综艺实习（DO）「一站到底 · 舞台内外」
@@ -324,30 +325,20 @@ export default function EntertainmentBehindScenesStage({ onClose }: StageProps) 
             initial={{ opacity: 0, scale: 0.9, filter: 'blur(10px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
-            className="relative overflow-hidden rounded-[18px] border border-white/20 bg-black shadow-[0_0_0_6px_rgba(255,255,255,0.05),0_30px_60px_rgba(0,0,0,0.65),0_0_60px_rgba(122,162,255,0.28)]"
+            className="relative rounded-[18px] border border-white/20 bg-black shadow-[0_0_0_6px_rgba(255,255,255,0.05),0_30px_60px_rgba(0,0,0,0.65),0_0_60px_rgba(122,162,255,0.28)]"
           >
-            <video
-              className="block aspect-video w-full object-cover"
+            <SeekBarVideo
               src="/ent-bts/yzd-trailer.mp4"
-              autoPlay
-              loop
+              className="block aspect-video w-full object-cover"
               muted={muted}
-              playsInline
-              controls
-              preload="metadata"
+              onToggleMute={toggleMute}
+              showMuteHint
+              tone="dark"
+              barClassName="px-2.5 pb-2 pt-0"
+              frameClassName="relative overflow-hidden rounded-t-[17px]"
             />
-            {/* 中央第一个“静音”提示：点一下开始听到舞台的声音 */}
-            {muted && (
-              <button
-                type="button"
-                onClick={toggleMute}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40 backdrop-blur-sm transition hover:bg-black/65"
-              >
-                🔊 点击开启声音
-              </button>
-            )}
             {/* hover 出现播放栏入口（轻量，不喧宾夺主） */}
-            <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <span className="pointer-events-none absolute inset-x-0 top-0 aspect-video overflow-hidden rounded-t-[17px] opacity-0 transition-opacity duration-300 group-hover:opacity-100">
               <span className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_60%,rgba(0,0,0,0.45))]" />
               <span className="absolute bottom-2.5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
                 《 一站到底 》宣传片 · 一期先导

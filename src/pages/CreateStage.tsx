@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import ProgressScrubber from '../components/ProgressScrubber'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 品牌部实习（CREATE）「Make ideas visible.」
@@ -319,26 +320,21 @@ export default function CreateStage({ onClose }: StageProps) {
                 🔊 点击开启声音
               </span>
             )}
-            <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <span className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_62%,rgba(0,0,0,0.55))]" />
-              <span className="absolute bottom-3 left-3 max-w-[80%]">
-                <span className="block text-[13px] font-black text-white drop-shadow">{active.title}</span>
-                <span className="block text-[10.5px] font-semibold tracking-[0.16em] text-white/70">{active.cn}</span>
-              </span>
+            <span
+              className="absolute left-3 max-w-[80%]"
+              style={{ bottom: 'calc(0.75rem + 22px)' }}
+            >
+              <span className="block text-[13px] font-black text-white drop-shadow">{active.title}</span>
+              <span className="block text-[10.5px] font-semibold tracking-[0.16em] text-white/70">{active.cn}</span>
             </span>
           </motion.div>
 
-          {/* 播放进度装饰条 */}
+          {/* 可拖动的播放进度条 */}
           <div className="mt-2 flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5">
             <span className="font-cartoon-latin text-[10.5px] font-bold tracking-[0.18em]" style={{ color: accent }}>
               {active.tag === 'AI' ? 'AI · GENERATED' : 'LIVE · CAPTURED'}
             </span>
-            <span className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/10">
-              <span
-                className="absolute inset-y-0 left-0 w-1/3 rounded-full"
-                style={{ background: `linear-gradient(90deg,${accent},#ffd166)` }}
-              />
-            </span>
+            <ProgressScrubber videoRef={videoRef} accent={accent} />
             <span className="font-cartoon-latin text-[10.5px] font-bold tracking-[0.18em] text-white/40">
               {active.cn}
             </span>

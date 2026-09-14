@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion'
-import { useCallback, useLayoutEffect, useRef, useState } from 'react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react'
+import SeekBarVideo from '../components/SeekBarVideo'
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 纪录片实习（LEAD）「寻找未来的人」
@@ -138,8 +139,20 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
   const binRef = useRef<HTMLDivElement>(null)
   const [bin, setBin] = useState<BinShot[]>([])
   const [muted, setMuted] = useState(true)
+  // 被点击放大的素材（null = 未打开灯箱）
+  const [zoom, setZoom] = useState<number | null>(null)
 
   const toggleMute = useCallback(() => setMuted((m) => !m), [])
+
+  // 灯箱打开时：Esc 关闭
+  useEffect(() => {
+    if (zoom === null) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setZoom(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [zoom])
 
   useLayoutEffect(() => {
     const box = binRef.current
@@ -218,46 +231,29 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
             initial={{ opacity: 0, scale: 0.94, filter: 'blur(8px)' }}
             animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
             transition={{ duration: 0.7, ease: 'easeOut' }}
-            onClick={toggleMute}
-            className="group relative cursor-pointer overflow-hidden rounded-[16px] border border-white/15 bg-black shadow-[0_0_0_5px_rgba(255,255,255,0.045),0_26px_60px_rgba(0,0,0,0.7),0_0_70px_rgba(125,211,252,0.22)]"
+            className="group relative rounded-[16px] border border-white/15 bg-black shadow-[0_0_0_5px_rgba(255,255,255,0.045),0_26px_60px_rgba(0,0,0,0.7),0_0_70px_rgba(125,211,252,0.22)]"
           >
-            <video
-              className="block aspect-video w-full object-cover"
+            <SeekBarVideo
               src="/doc-bts/trailer.mp4"
-              autoPlay
-              loop
+              className="block aspect-video w-full object-cover"
               muted={muted}
-              playsInline
-              preload="metadata"
+              onToggleMute={toggleMute}
+              showMuteHint
+              tone="dark"
+              barClassName="px-3 pb-2.5 pt-0"
+              frameClassName="relative overflow-hidden rounded-t-[15px]"
             />
-            {/* 监视器安全框（点缀剪辑台的“画框感”） */}
-            <span aria-hidden className="pointer-events-none absolute inset-[6%] rounded-[10px] border border-white/12" />
-            {muted && (
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40 backdrop-blur-sm">
-                🔊 点击开启声音
-              </span>
-            )}
-            <span className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-              <span className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_62%,rgba(0,0,0,0.5))]" />
-              <span className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
-                《 寻找未来的人 》先导预告
+            {/* 监视器安全框（只压在视频画面上，不盖进度条） */}
+            <span aria-hidden className="pointer-events-none absolute inset-x-0 top-0 aspect-video overflow-hidden rounded-t-[15px]">
+              <span className="absolute inset-[6%] rounded-[10px] border border-white/12" />
+              <span className="absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                <span className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0)_62%,rgba(0,0,0,0.5))]" />
+                <span className="absolute bottom-3 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-bold uppercase tracking-[0.3em] text-white/80">
+                  《 寻找未来的人 》先导预告
+                </span>
               </span>
             </span>
           </motion.div>
-
-          {/* 节目监视器下方的一条“播放头/时码”装饰条 */}
-          <div className="mt-2 flex items-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3 py-1.5">
-            <span className="font-cartoon-latin text-[10.5px] font-bold tracking-[0.18em] text-[#7dd3fc]/85">
-              00:00:00:00
-            </span>
-            <span className="relative h-1 flex-1 overflow-hidden rounded-full bg-white/10">
-              <span className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-gradient-to-r from-[#7dd3fc] to-[#ffd166]" />
-              <i className="absolute -top-[3px] left-1/3 h-[10px] w-[3px] rounded-sm bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)]" />
-            </span>
-            <span className="font-cartoon-latin text-[10.5px] font-bold tracking-[0.18em] text-white/40">
-              TRAILER
-            </span>
-          </div>
         </div>
 
         {/* 项目/信息面板：主题 + 我做了什么 */}
@@ -363,6 +359,16 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 whileHover={{ y: -6, scale: 1.045, zIndex: 30 }}
                 transition={{ delay: 0.5 + i * 0.08, type: 'spring', stiffness: 140, damping: 20, mass: 0.7 }}
+                onClick={() => setZoom(i)}
+                role="button"
+                tabIndex={0}
+                aria-label={`放大查看：${CLIPS[i].label}`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault()
+                    setZoom(i)
+                  }
+                }}
               >
                 {/* 被选中的“剪辑高亮”描边 */}
                 <span
@@ -388,11 +394,58 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
                 <span className="font-cartoon-latin pointer-events-none absolute left-1.5 top-1.5 flex h-5 min-w-[20px] items-center justify-center rounded-md bg-black/50 px-1 text-[10.5px] font-bold text-white ring-1 ring-white/25 backdrop-blur-sm">
                   {String(i + 1).padStart(2, '0')}
                 </span>
+                {/* hover 时闪现的放大提示 */}
+                <span className="pointer-events-none absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-md bg-black/55 text-[10px] text-white opacity-0 ring-1 ring-white/25 backdrop-blur-sm transition-opacity duration-200 group-hover:opacity-100">
+                  ⤢
+                </span>
               </motion.figure>
             )
           })}
         </div>
       </div>
+
+      {/* —— 素材放大灯箱：点击素材箱里的任意一张即可查看大图 —— */}
+      <AnimatePresence>
+        {zoom !== null && (
+          <motion.div
+            key="doc-zoom"
+            className="absolute inset-0 z-[60] flex items-center justify-center bg-black/85 p-6 backdrop-blur-sm"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setZoom(null)}
+          >
+            <motion.figure
+              className="relative flex max-h-full max-w-full flex-col items-center"
+              initial={{ opacity: 0, scale: 0.92, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 6 }}
+              transition={{ type: 'spring', stiffness: 160, damping: 22 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={SHOTS[zoom]}
+                alt={CLIPS[zoom].label}
+                className="block max-h-[74vh] w-auto max-w-full rounded-[14px] border border-white/20 object-contain shadow-[0_30px_80px_rgba(0,0,0,0.8),0_0_60px_rgba(125,211,252,0.25)]"
+              />
+              <figcaption className="mt-3 flex items-center gap-2.5 rounded-full bg-white/10 px-4 py-1.5 backdrop-blur-sm">
+                <span className="font-cartoon-latin text-[11px] font-bold tracking-[0.18em] text-[#ffd166]">
+                  {String(zoom + 1).padStart(2, '0')}
+                </span>
+                <span className="text-[12.5px] font-semibold text-white/90">{CLIPS[zoom].label}</span>
+              </figcaption>
+            </motion.figure>
+            <button
+              type="button"
+              onClick={() => setZoom(null)}
+              aria-label="关闭"
+              className="absolute right-4 top-4 flex h-10 w-10 items-center justify-center rounded-full bg-white/12 text-lg font-black text-white ring-1 ring-white/30 backdrop-blur-sm transition hover:scale-105 hover:bg-white/20"
+            >
+              ✕
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* 关闭 */}
       <button
