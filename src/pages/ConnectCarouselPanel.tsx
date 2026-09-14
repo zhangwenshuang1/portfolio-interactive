@@ -65,7 +65,7 @@ export default function ConnectCarouselPanel({ puzzle, onClose }: PanelProps) {
               志愿与连接 · 成为故事的一部分
             </h1>
             <p className="mt-1 max-w-[620px] text-[12px] font-medium text-[#6b5636]/80 sm:text-[12.5px]">
-              翻开这本手账，每一页都藏着一段走过的路 —— 左页是照片，右页是当时写下的心情。
+              翻开这本手账，每一页都藏着一段走过的路。
             </p>
           </div>
           <span className="font-cartoon-latin hidden rounded-full border border-[#b4925a]/30 bg-white/50 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#8a6a44] sm:inline-block">
@@ -76,9 +76,6 @@ export default function ConnectCarouselPanel({ puzzle, onClose }: PanelProps) {
 
       <div className="relative mx-auto flex w-full max-w-6xl min-h-0 flex-1 flex-col px-4 pb-3 pt-2 sm:px-6 lg:px-8">
         <ConnectStage onClose={handleClose} />
-        <p className="mt-2 flex-none pb-1 text-center text-[10.5px] font-semibold uppercase tracking-[0.28em] text-[#6b5636]/70">
-          点 NEXT / PREV 翻页 · 也可用键盘 ← → · Flip the page to travel
-        </p>
       </div>
     </motion.div>
   )
