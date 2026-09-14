@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
+import AnimeMap from '../components/AnimeMap'
 
 interface HobbyStageProps {
   onClose: () => void
@@ -49,7 +50,7 @@ const HOBBIES: Hobby[] = [
     cn: '攀岩',
     x: 30,
     y: 66,
-    photos: ['climb-1', 'climb-2'],
+    photos: ['climb-1', 'climb-2', 'climb-3'],
     blurb: '往上一步，世界就多开一扇窗。',
   },
   {
@@ -126,42 +127,30 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
 
   return (
     <div className="relative min-h-0 flex flex-1 flex-col">
-      <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border border-[#1e3a5f]/40 bg-[#0b1622] shadow-[0_30px_80px_-30px_rgba(0,0,0,0.9)]">
-        {/* 地图底纹：网格 + 地形等高线氛围 */}
+      <div className="relative min-h-0 flex-1 overflow-hidden rounded-3xl border-[3px] border-[#8a6a44]/70 bg-[#f2dcb2] shadow-[0_30px_80px_-30px_rgba(60,40,20,0.8)]">
+        {/* 动漫风手绘地图（山、海、树、动物） */}
+        <AnimeMap className="pointer-events-none absolute inset-0 h-full w-full" />
+
+        {/* 地图纸的柔和暗角，让图标更突出 */}
         <span
           aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.18]"
-          style={{
-            backgroundImage:
-              'linear-gradient(rgba(120,200,255,0.35) 1px, transparent 1px), linear-gradient(90deg, rgba(120,200,255,0.35) 1px, transparent 1px)',
-            backgroundSize: '46px 46px',
-          }}
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -left-24 -top-24 h-[420px] w-[420px] rounded-full opacity-30 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #1e6091 0%, transparent 70%)' }}
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute -bottom-32 -right-16 h-[520px] w-[520px] rounded-full opacity-25 blur-3xl"
-          style={{ background: 'radial-gradient(circle, #2a9d8f 0%, transparent 70%)' }}
+          className="pointer-events-none absolute inset-0 shadow-[inset_0_0_120px_rgba(120,80,40,0.22)]"
         />
 
         {/* 标题 */}
         <div className="relative z-10 flex items-start justify-between px-5 pt-4 sm:px-7">
           <div>
-            <p className="font-cartoon-latin text-[11px] font-bold uppercase tracking-[0.3em] text-[#7fd3ff]">
+            <p className="font-cartoon-latin text-[11px] font-bold uppercase tracking-[0.3em] text-[#8a5a2b]">
               Interest Map · MOVE
             </p>
             <h2
-              className="mt-1 text-xl font-black text-[#eaf6ff] drop-shadow-[0_3px_14px_rgba(0,0,0,0.6)] sm:text-2xl"
+              className="mt-1 text-xl font-black text-[#4a3417] drop-shadow-[0_2px_10px_rgba(255,250,235,0.85)] sm:text-2xl"
               style={{ fontFamily: "'ZCOOL KuaiLe','Microsoft YaHei',sans-serif" }}
             >
               我的兴趣地图
             </h2>
           </div>
-          <span className="hidden rounded-full border border-[#7fd3ff]/30 bg-white/5 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#9fd8ff] sm:inline-block">
+          <span className="hidden rounded-full border border-[#8a6a44]/40 bg-[#fffaf0]/85 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.22em] text-[#7a5a2f] sm:inline-block">
             把鼠标移到兴趣上
           </span>
         </div>
@@ -185,8 +174,8 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                   y1={h.y}
                   x2={next.x}
                   y2={next.y}
-                  stroke={on ? 'rgba(127,211,255,0.55)' : 'rgba(127,211,255,0.12)'}
-                  strokeWidth={on ? 0.45 : 0.3}
+                  stroke={on ? 'rgba(180,86,43,0.75)' : 'rgba(120,85,40,0.28)'}
+                  strokeWidth={on ? 0.5 : 0.3}
                   strokeDasharray="2 2"
                   vectorEffect="non-scaling-stroke"
                   style={{ transition: 'stroke 0.3s, stroke-width 0.3s' }}
@@ -215,18 +204,22 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                   animate={{
                     scale: isOn ? 1.12 : 1,
                     boxShadow: isOn
-                      ? '0 0 0 6px rgba(127,211,255,0.18), 0 0 34px 6px rgba(127,211,255,0.55)'
-                      : '0 0 0 0 rgba(127,211,255,0), 0 0 0 0 rgba(127,211,255,0)',
+                      ? '0 0 0 6px rgba(255,196,88,0.35), 0 0 34px 8px rgba(246,180,62,0.85)'
+                      : '0 4px 14px 0 rgba(80,50,20,0.35), 0 0 0 0 rgba(246,180,62,0)',
                   }}
                   transition={{ type: 'spring', stiffness: 320, damping: 22 }}
-                  className="flex h-16 w-16 flex-col items-center justify-center rounded-2xl border border-[#7fd3ff]/40 bg-[#0e2135]/80 backdrop-blur sm:h-20 sm:w-20"
+                  className={`flex h-16 w-16 flex-col items-center justify-center rounded-2xl border-2 backdrop-blur-sm sm:h-20 sm:w-20 ${
+                    isOn
+                      ? 'border-[#f0a93c] bg-[#fff8e6]/95'
+                      : 'border-[#b08a52]/70 bg-[#fffaf0]/85'
+                  }`}
                 >
                   <span className={`text-2xl sm:text-3xl ${isOn ? 'animate-pulse' : ''}`}>
                     {h.emoji}
                   </span>
                   <span
                     className={`font-cartoon-latin mt-0.5 text-[9px] font-bold tracking-[0.18em] sm:text-[10px] ${
-                      isOn ? 'text-[#eaf6ff]' : 'text-[#8fb4cf]'
+                      isOn ? 'text-[#8a4a12]' : 'text-[#9b7c50]'
                     }`}
                   >
                     {h.en}
@@ -239,7 +232,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                       initial={{ opacity: 0, y: -4 }}
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0 }}
-                      className="pointer-events-none absolute left-1/2 top-full mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#7fd3ff] px-2.5 py-0.5 text-[11px] font-bold text-[#06121f]"
+                      className="pointer-events-none absolute left-1/2 top-full mt-1.5 -translate-x-1/2 whitespace-nowrap rounded-full bg-[#d9743a] px-2.5 py-0.5 text-[11px] font-bold text-[#fff8e6] shadow-lg"
                     >
                       {h.cn}
                     </motion.span>
@@ -262,18 +255,18 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                 onMouseLeave={leave}
                 className="absolute left-1/2 top-1/2 z-30 w-[min(88vw,560px)] -translate-x-1/2 -translate-y-1/2"
               >
-                <div className="rounded-3xl border border-[#7fd3ff]/30 bg-[#0a1523]/92 p-3 shadow-[0_24px_70px_-20px_rgba(0,0,0,0.95)] backdrop-blur sm:p-4">
+                <div className="rounded-3xl border-[3px] border-[#b08a52]/70 bg-[#fffdf6]/96 p-3 shadow-[0_24px_70px_-20px_rgba(60,40,20,0.75)] backdrop-blur sm:p-4">
                   <div className="mb-2 flex items-center gap-2">
                     <span className="text-xl">{activeHobby.emoji}</span>
-                    <span className="font-cartoon-latin text-sm font-black tracking-[0.16em] text-[#eaf6ff]">
+                    <span className="font-cartoon-latin text-sm font-black tracking-[0.16em] text-[#4a3417]">
                       {activeHobby.en}
                     </span>
-                    <span className="text-sm font-bold text-[#9fd8ff]">{activeHobby.cn}</span>
-                    <span className="ml-auto text-[10px] font-semibold uppercase tracking-[0.2em] text-[#5f89a8]">
+                    <span className="text-sm font-bold text-[#c1682f]">{activeHobby.cn}</span>
+                    <span className="ml-auto text-[10px] font-semibold uppercase tracking-[0.2em] text-[#a68a5c]">
                       {activeHobby.photos.length} 张
                     </span>
                   </div>
-                  <p className="mb-2.5 text-[12px] font-medium leading-relaxed text-[#a9c6dc]">
+                  <p className="mb-2.5 text-[12px] font-medium leading-relaxed text-[#6f5a3c]">
                     {activeHobby.blurb}
                   </p>
                   <div
@@ -291,7 +284,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.05 + i * 0.06 }}
-                        className="overflow-hidden rounded-xl border border-white/10 bg-black/30"
+                        className="overflow-hidden rounded-xl border border-[#d8c49a] bg-[#f4ead4]"
                       >
                         <img
                           src={`/hobby/${p}.webp`}
@@ -314,7 +307,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#5f89a8]"
+                className="pointer-events-none absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-[#fffaf0]/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.28em] text-[#9b7c50]"
               >
                 Hover an interest to light it up
               </motion.p>
@@ -323,7 +316,7 @@ export default function HobbyStage({ onClose }: HobbyStageProps) {
         </div>
       </div>
 
-      <p className="mt-2 flex-none pb-1 text-center text-[10.5px] font-semibold uppercase tracking-[0.28em] text-[#6b8499]">
+      <p className="mt-2 flex-none pb-1 text-center text-[10.5px] font-semibold uppercase tracking-[0.28em] text-[#9b7c50]">
         鼠标移到兴趣上点亮 · 也可用键盘 ← → 切换 · Esc 关闭
       </p>
     </div>

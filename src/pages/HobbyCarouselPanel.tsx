@@ -34,16 +34,16 @@ export default function HobbyCarouselPanel({ puzzle, onClose }: PanelProps) {
       className="fixed inset-0 z-50 flex flex-col overflow-hidden"
       style={{
         background:
-          'radial-gradient(120% 100% at 50% 0%, #14293f 0%, #0d1c2b 42%, #08111b 78%, #04080d 100%)',
+          'radial-gradient(120% 100% at 50% 0%, #fbf1dc 0%, #f2e0bd 40%, #e2c795 76%, #b9995f 100%)',
       }}
     >
-      {/* 夜色地图纹理 */}
+      {/* 旧地图纸纹理 */}
       <span
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.22]"
         style={{
           backgroundImage:
-            'repeating-linear-gradient(115deg, rgba(120,200,255,0.08) 0 2px, transparent 2px 11px)',
+            'repeating-linear-gradient(115deg, rgba(120,80,40,0.12) 0 2px, transparent 2px 11px)',
         }}
       />
 
@@ -55,20 +55,20 @@ export default function HobbyCarouselPanel({ puzzle, onClose }: PanelProps) {
       >
         <div className="mb-1 flex items-center justify-between">
           <div>
-            <p className="font-cartoon-latin text-[11px] font-bold uppercase tracking-[0.3em] text-[#7fd3ff]">
+            <p className="font-cartoon-latin text-[11px] font-bold uppercase tracking-[0.3em] text-[#a8763a]">
               Interest Map · Move
             </p>
             <h1
-              className="mt-1 text-2xl font-black text-[#eaf6ff] drop-shadow-[0_3px_12px_rgba(0,0,0,0.7)] sm:text-3xl"
+              className="mt-1 text-2xl font-black text-[#3f2e13] drop-shadow-[0_2px_12px_rgba(255,250,235,0.9)] sm:text-3xl"
               style={{ fontFamily: "'ZCOOL KuaiLe','Microsoft YaHei',sans-serif" }}
             >
               兴趣爱好 · 生活不只有一条赛道
             </h1>
-            <p className="mt-1 max-w-[620px] text-[12px] font-medium text-[#9fbdd6]/80 sm:text-[12.5px]">
+            <p className="mt-1 max-w-[620px] text-[12px] font-medium text-[#6f5a3c]/85 sm:text-[12.5px]">
               这不是一张普通的地图 —— 每个坐标都是一个让我着迷的兴趣，把鼠标移上去，它就亮起来。
             </p>
           </div>
-          <span className="font-cartoon-latin hidden rounded-full border border-[#7fd3ff]/30 bg-white/5 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#9fd8ff] sm:inline-block">
+          <span className="font-cartoon-latin hidden rounded-full border border-[#a8763a]/35 bg-white/50 px-4 py-2 text-xs font-bold uppercase tracking-[0.2em] text-[#8a6a44] sm:inline-block">
             Move · Map
           </span>
         </div>
