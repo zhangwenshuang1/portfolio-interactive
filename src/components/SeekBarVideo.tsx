@@ -19,8 +19,6 @@ interface SeekBarVideoProps {
   barClassName?: string
   /** 视频画面容器的额外 class（圆角/裁切等） */
   frameClassName?: string
-  /** 是否显示「点击开启声音」的中央提示 */
-  showMuteHint?: boolean
 }
 
 const fmt = (t: number) => {
@@ -34,7 +32,7 @@ const fmt = (t: number) => {
  * 带「可拖动进度条」的视频组件。
  *
  * 设计目标：让视频看起来不像系统原生播放器（原生控件样式跟作品集风格不搭），
- * 但保留最核心的交互 —— **拖动进度条任意跳转** + 点击播放/暂停 + 音量开关。
+ * 但保留最核心的交互 —— **拖动进度条任意跳转** + 点击画面开/关声音 + 进度条旁小按钮控制播放/暂停。
  *
  * - 进度条：鼠标按下即开始拖拽（pointer capture），松手前实时跟随，松手后跳转。
  * - 缓冲：进度条上会显示已缓冲区间。
@@ -51,7 +49,6 @@ export default function SeekBarVideo({
   tone = 'dark',
   barClassName = '',
   frameClassName = '',
-  showMuteHint = false,
 }: SeekBarVideoProps) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -66,7 +63,8 @@ export default function SeekBarVideo({
   const [buffered, setBuffered] = useState(0)
   const [dragging, setDragging] = useState(false)
 
-  const toggleMute = useCallback(() => {
+  /** 点击画面 / 角落按钮：开启或关闭声音 */
+  const toggleSound = useCallback(() => {
     if (onToggleMute) onToggleMute()
     else setInternalMuted((m) => !m)
   }, [onToggleMute])
@@ -199,39 +197,48 @@ export default function SeekBarVideo({
   return (
     <div ref={wrapRef} className="relative">
       <div className={`group/vid relative ${frameClassName}`}>
-        {/* 视频本体：点击播放/暂停 */}
+        {/* 视频本体 */}
+        <video
+          ref={videoRef}
+          className={className}
+          src={src}
+          poster={poster}
+          autoPlay={autoPlay}
+          loop={loop}
+          muted={muted}
+          playsInline
+          preload="metadata"
+        />
+
+        {/* 点击画面任意位置：开启 / 关闭声音 */}
         <button
           type="button"
-          onClick={togglePlay}
-          className="block w-full cursor-pointer border-0 bg-transparent p-0"
-          aria-label={playing ? '暂停' : '播放'}
-        >
-          <video
-            ref={videoRef}
-            className={className}
-            src={src}
-            poster={poster}
-            autoPlay={autoPlay}
-            loop={loop}
-            muted={muted}
-            playsInline
-            preload="metadata"
-          />
-        </button>
+          onClick={toggleSound}
+          aria-label={muted ? '点击开启声音' : '点击关闭声音'}
+          title={muted ? '点击开启声音' : '点击关闭声音'}
+          className="absolute inset-0 z-10 cursor-pointer border-0 bg-transparent p-0"
+        />
 
-        {/* 中央静音提示（可选） */}
-        {showMuteHint && muted && (
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              toggleMute()
-            }}
-            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40 backdrop-blur-sm transition hover:bg-black/65"
-          >
-            🔊 点击开启声音
-          </button>
+        {/* 静音时中央的提示胶囊 */}
+        {muted && (
+          <span className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40 backdrop-blur-sm">
+            🔊 点击画面开启声音
+          </span>
         )}
+
+        {/* 声音状态按钮：右下角常驻 */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation()
+            toggleSound()
+          }}
+          aria-label={muted ? '开启声音' : '关闭声音'}
+          title={muted ? '开启声音' : '关闭声音'}
+          className="absolute bottom-3 right-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-sm text-white ring-1 ring-white/35 backdrop-blur-sm transition hover:scale-110 hover:bg-black/70"
+        >
+          {muted ? '🔇' : '🔊'}
+        </button>
       </div>
 
       {/* —— 可拖动进度条 —— */}
@@ -290,18 +297,6 @@ export default function SeekBarVideo({
         >
           {fmt(time)} / {fmt(duration)}
         </span>
-
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            toggleMute()
-          }}
-          aria-label={muted ? '开启声音' : '静音'}
-          className="flex h-6 w-6 flex-none items-center justify-center rounded-full bg-white/10 text-[10px] text-white/85 ring-1 ring-white/20 transition hover:bg-white/20"
-        >
-          {muted ? '🔇' : '🔊'}
-        </button>
       </div>
     </div>
   )

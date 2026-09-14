@@ -387,15 +387,33 @@ export default function CreateStage({ onClose }: StageProps) {
               playsInline
               preload="metadata"
             />
+            {/* 点击画面任意位置即可开启 / 关闭声音 */}
+            <button
+              type="button"
+              onClick={toggleMute}
+              aria-label={muted ? '点击开启声音' : '点击关闭声音'}
+              title={muted ? '点击开启声音' : '点击关闭声音'}
+              className="absolute inset-0 z-10 cursor-pointer border-0 bg-transparent p-0"
+            />
+            {/* 静音时中央的提示胶囊 */}
             {muted && (
-              <button
-                type="button"
-                onClick={toggleMute}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40 backdrop-blur-sm transition hover:bg-black/65"
-              >
-                🔊 点击开启声音
-              </button>
+              <span className="pointer-events-none absolute left-1/2 top-1/2 z-20 -translate-x-1/2 -translate-y-1/2 rounded-full bg-black/45 px-4 py-1.5 text-xs font-semibold text-white ring-1 ring-white/40 backdrop-blur-sm">
+                🔊 点击画面开启声音
+              </span>
             )}
+            {/* 声音状态按钮：右下角常驻，随时可再次切换 */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                toggleMute()
+              }}
+              aria-label={muted ? '开启声音' : '关闭声音'}
+              title={muted ? '开启声音' : '关闭声音'}
+              className="absolute bottom-3 right-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-sm text-white ring-1 ring-white/35 backdrop-blur-sm transition hover:scale-110 hover:bg-black/70"
+            >
+              {muted ? '🔇' : '🔊'}
+            </button>
             <span
               className="absolute left-3 max-w-[80%]"
               style={{ bottom: 'calc(0.75rem + 22px)' }}

@@ -238,7 +238,6 @@ export default function DocumentaryLeadStage({ onClose }: StageProps) {
               className="block aspect-video w-full object-cover"
               muted={muted}
               onToggleMute={toggleMute}
-              showMuteHint
               tone="dark"
               barClassName="px-3 pb-2.5 pt-0"
               frameClassName="relative overflow-hidden rounded-t-[15px]"
