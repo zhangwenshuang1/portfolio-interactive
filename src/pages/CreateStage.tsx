@@ -31,15 +31,15 @@ interface Work {
 }
 
 const WORKS: Work[] = [
-  // 实拍类
-  { key: 'tan-dian-muke', title: '《暮刻书坊》', cn: '探店短片', mode: 'live', tag: '实拍', orientation: 'portrait' },
-  { key: 'live-anniv', title: '实拍周年活动', cn: '品牌活动记录', mode: 'live', tag: '实拍', orientation: 'landscape' },
-  // AI 类
-  { key: 'long-restaurant', title: '《欢迎来到龙餐馆》', cn: 'AI 短片', mode: 'ai', tag: 'AI', orientation: 'portrait' },
-  { key: 'foreign-shop', title: '《老外的上海宝藏小店》', cn: 'AI 短片', mode: 'ai', tag: 'AI', orientation: 'portrait' },
-  { key: 'aidamodu', title: '《爱达魔都号》', cn: 'AI 品牌短片', mode: 'ai', tag: 'AI', orientation: 'landscape', posterExt: 'png' },
+  // AI 类（AIGC创作）—— 顺序：十三周年庆 → 爱达魔都号 → 欢迎来到龙餐馆 → 父亲的花 → 老外的上海宝藏小店
   { key: 'anniv-13', title: '收钱吧十三周年庆', cn: 'AI 品牌片', mode: 'ai', tag: 'AI', orientation: 'landscape' },
+  { key: 'aidamodu', title: '《爱达魔都号》', cn: 'AI 品牌短片', mode: 'ai', tag: 'AI', orientation: 'landscape', posterExt: 'png' },
+  { key: 'long-restaurant', title: '《欢迎来到龙餐馆》', cn: 'AI 短片', mode: 'ai', tag: 'AI', orientation: 'portrait' },
   { key: 'father-flower', title: '《父亲的花》', cn: '父亲节特辑 · AI', mode: 'ai', tag: 'AI', orientation: 'portrait' },
+  { key: 'foreign-shop', title: '《老外的上海宝藏小店》', cn: 'AI 短片', mode: 'ai', tag: 'AI', orientation: 'portrait' },
+  // 实拍类（现场实拍）—— 顺序：周年活动在前
+  { key: 'live-anniv', title: '实拍周年活动', cn: '品牌活动记录', mode: 'live', tag: '实拍', orientation: 'landscape' },
+  { key: 'tan-dian-muke', title: '《暮刻书坊》', cn: '探店短片', mode: 'live', tag: '实拍', orientation: 'portrait' },
 ]
 
 // —— 幕后胶片带：6 张工作照（压到最长边 1400px 的 webp） ——
@@ -78,7 +78,7 @@ interface StageProps {
 
 export default function CreateStage({ onClose }: StageProps) {
   const [activeKey, setActiveKey] = useState(WORKS[0].key)
-  const [mode, setMode] = useState<WorkMode>('live')
+  const [mode, setMode] = useState<WorkMode>('ai')
   const [muted, setMuted] = useState(true)
   const videoRef = useRef<HTMLVideoElement>(null)
 
@@ -105,8 +105,8 @@ export default function CreateStage({ onClose }: StageProps) {
   }, [activeKey])
 
   const grouped: Array<{ mode: WorkMode; works: Work[] }> = [
-    { mode: 'live', works: WORKS.filter((w) => w.mode === 'live') },
     { mode: 'ai', works: WORKS.filter((w) => w.mode === 'ai') },
+    { mode: 'live', works: WORKS.filter((w) => w.mode === 'live') },
   ]
 
   // 每支作品的缩略图 + 标题（竖屏与横屏两种排列共用）
