@@ -31,10 +31,10 @@ const pct = (p: { x: number; y: number }) => ({
 const PHOTO_RATIO: Record<string, number> = {
   'music-1': 0.75, 'music-2': 1.453,
   'cook-1': 0.75, 'cook-2': 0.75,
-  'climb-1': 1.333, 'climb-2': 0.75, 'climb-3': 0.75,
+  'climb-1': 0.75, 'climb-2': 0.75, 'climb-3': 0.75,
   'swim-1': 1.777,
   'hike-1': 0.75, 'hike-2': 1.774,
-  'ball-1': 0.667, 'ball-2': 0.75, 'ball-3': 1.501,
+  'ball-1': 0.75, 'ball-2': 0.75, 'ball-3': 0.75,
 }
 
 // 一张兴趣地图：六个兴趣点各自落在符合语义的地标上，
